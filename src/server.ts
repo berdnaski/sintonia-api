@@ -3,6 +3,7 @@ import { fastify, type FastifyInstance } from "fastify";
 import cors from "@fastify/cors"
 import { authRoutes } from './routes/authRoutes';
 import fastifyJwt from "fastify-jwt"
+import { errorHandler } from './middlewares/error-handler';
 
 const app: FastifyInstance = fastify();
 
@@ -21,6 +22,8 @@ app.register(fastifyJwt, {
 })
 
 app.register(authRoutes, { prefix: 'auth' });
+
+app.setErrorHandler(errorHandler);
 
 app.listen(
   {
