@@ -1,0 +1,40 @@
+import type { FastifyInstance } from "fastify";
+import type { CreateUser, UserRepository } from "../../interfaces/user.interface";
+import { UserRepositoryPrisma } from "../../repositories/user-repository";
+import { hashPassword } from "../../utils/hash";
+
+class AuthService {
+  private fastify: FastifyInstance;
+  private userRepository: UserRepository;
+
+  constructor(fastify: FastifyInstance) {
+    this.fastify = fastify;
+    this.userRepository = new UserRepositoryPrisma();
+  }
+
+  async register(data: CreateUser) {
+    const verifyIfExists = await this.userRepository.findByEmail(data.email);
+
+    if (verifyIfExists) {
+      throw new Error("Email already in use");
+    }
+
+    const hashedPassword = await hashPassword(data.password);
+
+    const user = await this.userRepository.create({
+      ...data,
+      password: hashedPassword
+    })
+
+    const token = this.fastify.jwt.sign({
+      sub: user.id
+    })
+
+    return {
+      user,
+      token
+    };
+  }
+}
+
+export { AuthService };
