@@ -8,10 +8,12 @@ export interface CreateUser {
 }
 
 export interface UserResponse {
-  id: string;
+  users: User[];
+}
+
+export interface UserLogin {
   email: string;
-  name: string;
-  avatarUrl?: string;
+  password: string;
 }
 
 export interface UserUpdate {
@@ -24,4 +26,8 @@ export interface UserUpdate {
 export interface UserRepository {
   create(data: CreateUser): Promise<User>;
   findByEmail(email: string): Promise<User | null>;
+  findById(id: string): Promise<User | null>;
+  findAll(): Promise<User[]>;
+  delete(id: string): Promise<User>;
+  update(id: string, data: UserUpdate): Promise<User>;
 }

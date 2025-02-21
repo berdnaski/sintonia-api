@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import type { CreateUser, UserRepository } from "../../interfaces/user.interface";
+import type { CreateUser, UserLogin, UserRepository } from "../../interfaces/user.interface";
 import { UserRepositoryPrisma } from "../../repositories/user-repository";
-import { hashPassword } from "../../utils/hash";
+import { hashPassword, verifyPassword } from "../../utils/hash";
 
 class AuthService {
   private fastify: FastifyInstance;
@@ -29,6 +29,29 @@ class AuthService {
     const token = this.fastify.jwt.sign({
       sub: user.id
     })
+
+    return {
+      user,
+      token
+    };
+  }
+
+  async login(data: UserLogin) {
+    const user = await this.userRepository.findByEmail(data.email);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const isValidPassword = await verifyPassword(data.password, user.password);
+
+    if (!isValidPassword) {
+      throw new Error("Invalid password");
+    }
+
+    const token = this.fastify.jwt.sign({
+      sub: user.id
+    });
 
     return {
       user,
