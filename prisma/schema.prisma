@@ -11,13 +11,32 @@ datasource db {
 }
 
 model User {
-  id        String @id @default(uuid())
-  name String 
-  email String @unique
-  password String
+  id        String   @id @default(uuid())
+  name      String  
+  email     String   @unique
+  password  String
   avatarUrl String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  coupleId  String?  
+  couple    Couple?  @relation(fields: [coupleId], references: [id])
 
   @@map("users")
+  Couple Couple[] @relation("CoupleUsers")
 }
+
+model Couple {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]   @relation("CoupleUsers") 
+
+  @@map("couples")
+  User User[]
+}
+
+
+
+

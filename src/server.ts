@@ -4,6 +4,7 @@ import cors from "@fastify/cors"
 import { authRoutes } from './routes/authRoutes';
 import fastifyJwt from "fastify-jwt"
 import { errorHandler } from './middlewares/error-handler';
+import { userRoutes } from './routes/userRoutes';
 
 const app: FastifyInstance = fastify();
 
@@ -22,6 +23,7 @@ app.register(fastifyJwt, {
 })
 
 app.register(authRoutes, { prefix: 'auth' });
+app.register(userRoutes);
 
 app.setErrorHandler(errorHandler);
 
