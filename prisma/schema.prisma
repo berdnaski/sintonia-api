@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,32 +8,34 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String  
-  email     String   @unique
-  password  String
-  avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  name               String
+  email              String   @unique
+  password           String
+  avatarUrl          String?
+  subscriptionStatus String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  coupleId           String?  @unique
 
-  coupleId  String?  
-  couple    Couple?  @relation(fields: [coupleId], references: [id])
+  couple          Couple? @relation("UsersCouple", fields: [coupleId], references: [id])
+  relationAsUser1 Couple? @relation("CoupleUser1")
+  relationAsUser2 Couple? @relation("CoupleUser2")
 
   @@map("users")
-  Couple Couple[] @relation("CoupleUsers")
 }
 
 model Couple {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  user1Id            String   @unique
+  user2Id            String   @unique
+  relationshipStatus String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  users     User[]   @relation("CoupleUsers") 
+  user1 User  @relation("CoupleUser1", fields: [user1Id], references: [id])
+  user2 User  @relation("CoupleUser2", fields: [user2Id], references: [id])
+  user  User? @relation("UsersCouple")
 
   @@map("couples")
-  User User[]
 }
-
-
-
-
