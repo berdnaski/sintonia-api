@@ -1,8 +1,14 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
-export async function auth(req: FastifyRequest, reply: FastifyReply) {
+export const Auth = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+  const token = request.headers.authorization?.split(' ')[1]
+
+  if (!token) {
+    return reply.status(401).send({ error: 'Unauthorized' });
+  }
+
   try {
-    await req.jwtVerify();
+    request.jwtVerify();
   } catch (err) {
     return reply.status(401).send({ error: 'Unauthorized' });
   }
