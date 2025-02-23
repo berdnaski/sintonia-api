@@ -1,26 +1,24 @@
-import fastifyCors from '@fastify/cors';
-import fastifyFormbody from '@fastify/formbody';
+import cors from '@fastify/cors';
+import formbody from '@fastify/formbody';
+import helmet from '@fastify/helmet';
 import 'dotenv/config';
 import { fastify, type FastifyInstance } from "fastify";
-import fastifyJwt from "fastify-jwt";
-import { errorHandler } from './middlewares/error-handler';
-import { authRoutes } from './routes/authRoutes';
-import { userRoutes } from './routes/userRoutes';
+import { userRoutes } from 'infra/http/routes/userRoutes';
+import { authRoutes } from './infra/http/routes/authRoutes';
 
-const app: FastifyInstance = fastify();
+export const app: FastifyInstance = fastify();
 
-app.register(fastifyJwt, {
-  secret: process.env.SECRET_KEY as string,
-  sign: {
-    expiresIn: '1d',
-  }
-})
-
-app.setErrorHandler(errorHandler);
-app.register(fastifyCors)
-app.register(fastifyFormbody)
-app.register(userRoutes);
+app.register(formbody)
+app.register(cors)
+app.register(helmet)
 app.register(authRoutes, { prefix: 'auth' });
+app.register(userRoutes);
 
 const PORT = Number(process.env.PORT) || 3000
-app.listen({ port: PORT }, () => console.log(`listening on port ${PORT}`))
+app.listen({ port: PORT }, (err) => {
+  if (err) {
+    console.error(err)
+    process.exit(1)
+  }
+  console.log(`listening on port ${PORT}`)
+})
