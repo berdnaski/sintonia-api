@@ -1,7 +1,6 @@
 import { User } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import { CreateUser, UserUpdate } from "../interfaces/user.interface";
-import { hashPassword } from "../utils/hash";
 
 export class PrismaUserRepository {
   async create(user: CreateUser): Promise<User | null> {

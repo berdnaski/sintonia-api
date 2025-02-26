@@ -1,15 +1,21 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 
 export const Auth = async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-  const token = request.headers.authorization?.split(' ')[1]
+  const authHeader = request.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return reply.status(401).send({ error: 'Invalid or missing Authorization header' });
+  }
+
+  const token = authHeader.split(' ')[1];
 
   if (!token) {
-    return reply.status(401).send({ error: 'Unauthorized' });
+    return reply.status(401).send({ error: 'Token not provided' });
   }
 
   try {
-    request.jwtVerify();
+    await request.jwtVerify();
   } catch (err) {
-    return reply.status(401).send({ error: 'Unauthorized' });
+    return reply.status(401).send({ error: 'Invalid token' });
   }
-}
+};
