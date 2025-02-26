@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { CreateUser, UserLogin } from "../interfaces/user.interface";
 import { AuthService } from "../services/authService/auth-service";
 import { hashPassword } from "../utils/hash";
@@ -22,9 +22,7 @@ export class AuthController {
       });
     }
 
-    const hashedPassword = await hashPassword(password);
-
-    const { user, token } = await this.authService.register({ name, email, password: hashedPassword });
+    const { user, token } = await this.authService.register({ name, email, password });
 
     reply.status(201).send({ user, token });
   }
