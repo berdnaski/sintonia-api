@@ -63,4 +63,25 @@ export class CoupleService {
 
     return { message: 'Invite send successfully' };
   }
+
+  async cancelInvite(inviteId: string): Promise<{ message: string }> {
+    try {
+      if (!inviteId) {
+        throw new Error('Invalid invite token');
+      }
+
+      const invite = await this.coupleRepository.findInviteByToken(inviteId);
+      
+      if (!invite) {
+        throw new Error('Invite not found');
+      }
+      
+      await this.coupleRepository.deleteInvite(invite.id);
+      
+      return { message: 'Invite cancelled successfully' };
+    } catch (error) {
+      throw error;
+    }
+  }
+  
 }

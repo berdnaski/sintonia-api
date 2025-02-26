@@ -32,7 +32,7 @@ export interface ICoupleRepository {
   createCouple(user1Id: string, user2Id: string, status: string): Promise<Couple>;
   deleteCouple(coupleId: string): Promise<void>;
   createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite>;
-  findInviteByToken(token: string): Promise<CoupleInvite | null>;
+  findInviteByToken(token: string): Promise<CoupleInvite | null>
   deleteInvite(id: string): Promise<void>;
   acceptInvite(inviterId: string, inviteeId: string): Promise<Couple>;
 }

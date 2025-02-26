@@ -10,7 +10,6 @@ export const Auth = async (request: FastifyRequest, reply: FastifyReply): Promis
     if (!user || typeof user !== 'object' || !user.id) {
       throw new Error('Invalid token payload');
     }
-    console.log("User authenticated:", user);
 
   } catch (err) {
     reply.status(401).send({

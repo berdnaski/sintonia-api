@@ -21,8 +21,6 @@ class AuthService {
 
     const hashedPassword = await hashPassword(data.password);
 
-    console.log('Generate hashed password: ', hashedPassword);
-
     const user = await this.userRepository.create({
       ...data,
       name: data.name,

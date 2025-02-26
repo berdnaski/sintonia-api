@@ -30,12 +30,8 @@ export class PrismaCoupleRepository implements ICoupleRepository {
     });
   }
 
-  async findInviteByToken(token: string): Promise<CoupleInvite | null> {
-    return prisma.coupleInvite.findUnique({ where: { token } });
-  }
-
   async deleteInvite(id: string): Promise<void> {
-    prisma.coupleInvite.delete({ where: { id } });
+    await prisma.coupleInvite.delete({ where: { id } });
   }
 
   async acceptInvite(inviterId: string, inviteeId: string): Promise<Couple> {
@@ -46,5 +42,18 @@ export class PrismaCoupleRepository implements ICoupleRepository {
         relationshipStatus: "active",
       },
     });
+  }
+
+  async findInviteByToken(token: string): Promise<CoupleInvite | null> {
+    
+    const invite = await prisma.coupleInvite.findFirst({ 
+      where: { 
+        OR: [
+          { token },
+          { inviterId: token }
+        ]
+      }
+    });
+    return invite;
   }
 }
