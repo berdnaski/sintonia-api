@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { CreateUser, UserLogin, UserRepository } from "../../interfaces/user.interface";
-import { UserRepositoryPrisma } from "../../repositories/user-repository";
+import { PrismaUserRepository } from "../../repositories/user-repository";
 import { hashPassword, verifyPassword } from "../../utils/hash";
 
 class AuthService {
@@ -9,11 +9,11 @@ class AuthService {
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
-    this.userRepository = new UserRepositoryPrisma();
+    this.userRepository = new PrismaUserRepository();
   }
 
   async register(data: CreateUser) {
-    const verifyIfExists = await this.userRepository.findByEmail(data.email);
+    const verifyIfExists = await this.userRepository.findOne(data.email);
 
     if (verifyIfExists) {
       throw new Error("Email already in use");
@@ -23,11 +23,13 @@ class AuthService {
 
     const user = await this.userRepository.create({
       ...data,
-      password: hashedPassword
+      name: data.name,
+      email: data.email,
+      password: hashedPassword,
     })
 
     const token = this.fastify.jwt.sign({
-      sub: user.id
+      sub: user?.id
     })
 
     return {
@@ -37,7 +39,7 @@ class AuthService {
   }
 
   async login(data: UserLogin) {
-    const user = await this.userRepository.findByEmail(data.email);
+    const user = await this.userRepository.findOne(data.email);
 
     if (!user) {
       throw new Error("User not found");
@@ -61,3 +63,4 @@ class AuthService {
 }
 
 export { AuthService };
+

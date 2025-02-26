@@ -1,6 +1,6 @@
-import type { FastifyInstance, FastifyRegister, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+import { CreateUser, UserLogin } from "../interfaces/user.interface";
 import { AuthService } from "../services/authService/auth-service";
-import type { CreateUser, UserLogin } from "../interfaces/user.interface";
 
 export class AuthController {
   private authService: AuthService;
@@ -10,9 +10,14 @@ export class AuthController {
   }
 
   async register(req: FastifyRequest<{ Body: CreateUser }>, reply: FastifyReply) {
-    const userData = req.body;
+    const { name, email, password } = req.body;
 
-    const { user, token } = await this.authService.register(userData);
+    const validateBody = CreateUser.safeParse({ name, email, password });
+    if (!validateBody.success) {
+      return reply.status(400).send({ error: validateBody.error.message });
+    }
+
+    const { user, token } = await this.authService.register({ name, email, password });
 
     reply.status(201).send({ user, token });
   }

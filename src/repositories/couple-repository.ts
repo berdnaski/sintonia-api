@@ -1,27 +1,32 @@
-import type { Couple } from "@prisma/client";
+import { Couple } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
-import type { CoupleRepository } from "../interfaces/couple.interface";
+import { CoupleRepository } from "../interfaces/couple.interface";
 
-class CoupleRepositoryPrisma implements CoupleRepository {
-  async create(userId: string): Promise<Couple> {
-    const couple = await prisma.couple.create({
+export class PrismaCoupleRepository implements CoupleRepository {
+  async create(couple: Couple): Promise<Couple> {
+    const coupleData = await prisma.couple.create({
       data: {
-        users: { connect: { id: userId } },
+        relationshipStatus: couple.relationshipStatus,
+        user1Id: couple.user1Id,
+        user2Id: couple.user2Id,
+      },
+      include: {
+        user1: true,
+        user2: true,
       },
     });
-  
-    return couple;
+
+    return coupleData as unknown as Couple;
   }
 
   async findById(id: string): Promise<Couple | null> {
-    const result = await prisma.couple.findUnique({
-      where: {
-        id
-      }
-    })
+    const query = await prisma.couple.findUnique({
+      where: { id },
+      include: { user1: true, user2: true },
+    });
 
-    return result;
+    if (!query) return null;
+
+    return query as unknown as Couple;
   }
 }
-
-export { CoupleRepositoryPrisma }

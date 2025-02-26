@@ -13,10 +13,10 @@ export function errorHandler(
     });
   }
 
-  console.error("Erro interno:", error);
+  // console.error("Erro interno:", error);
 
   return reply.status(500).send({
-    status: "error",
-    message: "Erro interno do servidor"
+    status: error.statusCode,
+    message: error.message
   });
 }

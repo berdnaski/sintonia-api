@@ -1,7 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { UserService } from "../services/userService/user.service";
-import type { User } from "@prisma/client";
 import type { UserUpdate } from "../interfaces/user.interface";
+import { UserService } from "../services/userService/user.service";
 
 export class UserController {
   private userService: UserService;
@@ -13,7 +12,7 @@ export class UserController {
   async findAll(req: FastifyRequest, reply: FastifyReply) {
     const users = await this.userService.findAll();
     return reply.status(200).send(users);
-  } 
+  }
 
   async findById(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = req.params;

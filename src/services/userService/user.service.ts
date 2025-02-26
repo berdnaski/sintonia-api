@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { UserRepository, UserResponse, UserUpdate } from "../../interfaces/user.interface";
-import { UserRepositoryPrisma } from "../../repositories/user-repository";
-import type { User } from "@prisma/client";
+import { PrismaUserRepository } from "../../repositories/user-repository";
 
 class UserService {
   private fastify: FastifyInstance;
@@ -9,7 +8,7 @@ class UserService {
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
-    this.userRepository = new UserRepositoryPrisma();
+    this.userRepository = new PrismaUserRepository();
   }
 
   async findAll(): Promise<UserResponse> {
@@ -18,14 +17,14 @@ class UserService {
     return { users }
   }
 
-  async findById(id: string) {
-    const user = await this.userRepository.findById(id);
+  async findOne(id: string) {
+    const user = await this.userRepository.findOne(id);
 
     return { user };
   }
 
   async delete(id: string) {
-    const user = await this.userRepository.findById(id);
+    const user = await this.userRepository.findOne(id);
 
     if (!user) {
       throw new Error("User not found");
@@ -35,13 +34,13 @@ class UserService {
   }
 
   async update(id: string, updateData: UserUpdate) {
-    const user = await this.userRepository.findById(id);
+    const user = await this.userRepository.findOne(id);
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    const updatedUser = await this.userRepository.update(id, updateData);
+    const updatedUser = await this.userRepository.save(id, updateData);
 
     return { user: updatedUser };
   }
