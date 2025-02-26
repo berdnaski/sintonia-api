@@ -10,33 +10,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String  
-  email     String   @unique
-  password  String
-  avatarUrl String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum PlanType {
+  None
+  Monthly
+  Annual
+}
 
-  coupleId  String?  
-  couple    Couple?  @relation(fields: [coupleId], references: [id])
+enum StatusPlan {
+  NoPlan
+  Activated
+  Canceled
+}
+
+model User {
+  id                 String         @id @default(uuid())
+  name               String
+  email              String         @unique
+  password           String
+  avatarUrl          String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  subscriptionStatus StatusPlan     @default(NoPlan)
+  signals            Signal[]       @relation
+  subscriptions      Subscription[] @relation
+  coupleAsUser1      Couple?        @relation("CoupleUser1")
+  coupleAsUser2      Couple?        @relation("CoupleUser2")
+  Tokens             Tokens[]       @relation("Tokens")
 
   @@map("users")
-  Couple Couple[] @relation("CoupleUsers")
 }
 
 model Couple {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  users     User[]   @relation("CoupleUsers") 
+  id                 String       @id @default(uuid())
+  relationshipStatus String
+  user1              User         @relation("CoupleUser1", fields: [user1Id], references: [id])
+  user1Id            String       @unique
+  user2              User         @relation("CoupleUser2", fields: [user2Id], references: [id])
+  user2Id            String       @unique
+  createdAt          DateTime     @default(now())
+  signals            Signal[]     @relation
+  aiResponses        AIResponse[] @relation
 
   @@map("couples")
-  User User[]
 }
 
+model Signal {
+  id        String   @id @default(uuid())
+  userId    String
+  coupleId  String
+  emotion   String
+  note      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  couple    Couple   @relation(fields: [coupleId], references: [id])
 
+  @@map("signals")
+}
 
+model AIResponse {
+  id        String   @id @default(uuid())
+  coupleId  String
+  summary   String
+  advice    String
+  challenge String
+  createdAt DateTime @default(now())
+  couple    Couple   @relation(fields: [coupleId], references: [id])
 
+  @@map("ai_responses")
+}
+
+model Subscription {
+  id                   String     @id @default(uuid())
+  userId               String
+  stripeSubscriptionId String
+  status               StatusPlan @default(NoPlan)
+  planType             PlanType   @default(None)
+  expiresIn            DateTime
+  user                 User       @relation(fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Tokens {
+  id        String  @id @default(uuid())
+  used      Boolean @default(false)
+  type      String
+  user_id   String
+  user      User    @relation("Tokens", fields: [user_id], references: [id])
+  expiresIn Int
+
+  @@map("tokens")
+}
