@@ -9,11 +9,11 @@ export async function coupleRoutes(app: FastifyInstance) {
 
   app.addHook("onRequest", Auth);
 
-  app.post('/couple/invite', async (req, reply) => {
+  app.post<{ Body: { email: string } }>('/couple/invite', async (req, reply) => {
     await coupleController.invitePartner(req, reply);
   });
   
-  app.delete('/couple/invites/:inviteId', async (req, reply) => {
+  app.delete<{ Params: { inviteId: string } }>('/couple/invites/:inviteId', async (req, reply) => {
     await coupleController.cancelInvite(req, reply);
-  });
+  })
 }
