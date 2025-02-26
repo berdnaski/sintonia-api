@@ -4,11 +4,9 @@ import { ITokensRepository } from "../../interfaces/token.interface";
 import { PrismaTokensRepository } from "../../repositories/tokens-repository";
 
 class TokensService {
-  private fastify: FastifyInstance;
   private tokensRepository: ITokensRepository;
 
-  constructor(fastify: FastifyInstance) {
-    this.fastify = fastify;
+  constructor() {
     this.tokensRepository = new PrismaTokensRepository();
   }
 

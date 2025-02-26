@@ -1,29 +1,64 @@
-import type { FastifyInstance } from "fastify";
-import type { CoupleRepository, CreateCouple } from "../../interfaces/couple.interface";
-import { CoupleRepositoryPrisma } from "../../repositories/couple-repository";
-import type { Couple } from "@prisma/client";
-import { AppError } from "../../errors/app-error";
+import dayjs from 'dayjs';
+import { FastifyInstance } from 'fastify';
+import { v4 as uuidv4 } from 'uuid';
+import { ICoupleRepository } from '../../interfaces/couple.interface';
+import { IUserRepository } from '../../interfaces/user.interface';
+import { MailProvider } from '../../providers/mail/implementations/MailProvider';
+import { IMailProvider } from '../../providers/mail/models/IMailProvider';
+import { InviteToCoupleMailTemplate } from '../../providers/mail/templates/InviteCoupleTemplate';
+import { PrismaCoupleRepository } from '../../repositories/couple-repository';
+import { PrismaUserRepository } from '../../repositories/user-repository';
 
-class CoupleService {
-  private fastify: FastifyInstance;
-  private coupleRepository: CoupleRepository;
+export class CoupleService {
+  private coupleRepository: ICoupleRepository;
+  private userRepository: IUserRepository;
+  private mailProvider: IMailProvider;
 
   constructor(fastify: FastifyInstance) {
-    this.fastify = fastify;
-    this.coupleRepository = new CoupleRepositoryPrisma();
+    this.coupleRepository = new PrismaCoupleRepository();
+    this.userRepository = new PrismaUserRepository();
+    this.mailProvider = new MailProvider();
   }
 
-  async create(userId: string): Promise<Couple> {
-    const verifyIfExists = await this.coupleRepository.findById(userId);
+  async invitePartner(inviterId: string, guestEmail: string) {
+    const inviter = await this.userRepository.findOne(inviterId);
+    // if (!inviter) {
+    //   throw new Error('O Usuário que envia o convite não encontrado.');
+    // }
 
-    if (verifyIfExists) {
-      throw new AppError('O casal já existe', 400);
+    const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
+    if (inviterCouple) {
+      throw new Error('Você já está em um casal.');
     }
 
-    const couple = await this.coupleRepository.create(userId);
+    const guestUser = await this.userRepository.findOne(guestEmail);
+    if (guestUser) {
+      const guestCouple = await this.coupleRepository.findCoupleByUserId(guestUser.id);
+      if (guestCouple) {
+        throw new Error('O convidado já está em um casal.');
+      }
+    }
 
-    return couple;
+    const invite = await this.coupleRepository.createInvite({
+      inviterId,
+      inviteeEmail: guestEmail,
+      token: uuidv4(),
+      expiresAt: dayjs().add(24, 'hours').unix(),
+    });
+
+    await this.mailProvider.sendMail({
+      to: {
+        name: guestUser.name,
+        email: guestEmail,
+      },
+      from: {
+        name: `${process.env.MAILER_DISPLAY_NAME}`,
+        email: `${process.env.MAILER_USERNAME}`,
+      },
+      subject: 'Convite para formar um casal',
+      body: InviteToCoupleMailTemplate(inviter.name, guestUser.name, invite.token),
+    });
+
+    return { message: 'Invite send successfully' };
   }
 }
-
-export { CoupleService }

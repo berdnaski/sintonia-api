@@ -4,7 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { v4 } from "uuid";
 import type { UserUpdate } from "../interfaces/user.interface";
 import { MailProvider } from "../providers/mail/implementations/MailProvider";
-import { RecoveryMailTemplate } from "../providers/mail/templates/RecoveryEmailTemplate";
+import { RecoveryMailTemplate } from "../providers/mail/templates/RecoveryEmailTemplate copy";
 import { TokensService } from "../services/tokenService/token.service";
 import { UserService } from "../services/userService/user.service";
 import { hashPassword } from "../utils/hash";
@@ -16,7 +16,7 @@ export class UserController {
 
   constructor(app: FastifyInstance) {
     this.userService = new UserService(app);
-    this.tokenService = new TokensService(app);
+    this.tokenService = new TokensService();
     this.mailProvider = new MailProvider();
   }
 
@@ -39,7 +39,6 @@ export class UserController {
       expiresIn: dayjs().add(1, 'hour').unix(),
     })
 
-    // await this.userService.save(account.id, account);
     await this.tokenService.saveToken(token);
 
     await this.mailProvider.sendMail({

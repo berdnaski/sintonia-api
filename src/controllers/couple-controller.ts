@@ -1,5 +1,7 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { CoupleService } from "../services/coupleService/couple-service";
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { CreateCoupleInvite } from '../interfaces/couple.interface';
+import { CreateUser } from '../interfaces/user.interface';
+import { CoupleService } from '../services/coupleService/couple-service';
 
 export class CoupleController {
   private coupleService: CoupleService;
@@ -8,12 +10,20 @@ export class CoupleController {
     this.coupleService = new CoupleService(app);
   }
 
-  async create(req: FastifyRequest<{ Body: { userId: string } }>, reply: FastifyReply) {
-    const { userId } = req.body;
+  async invitePartner(req: FastifyRequest<{ Body: CreateCoupleInvite }>, reply: FastifyReply) {
+    const { email } = req.body
+    const userId = (req.user as { id: string }).id;
 
-    const couple = await this.coupleService.create(userId);
+    const validateBody = CreateCoupleInvite.safeParse({ email });
+    if (!validateBody.success) {
+      const errors = validateBody.error.flatten().fieldErrors
+      return reply.status(400).send({
+        message: 'Invalid data.',
+        errors,
+      });
+    }
 
-    return reply.status(201).send({ couple });
+    const result = await this.coupleService.invitePartner(userId, email);
+    reply.status(200).send(result);
   }
 }
-

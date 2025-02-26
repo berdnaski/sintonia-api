@@ -1,7 +1,8 @@
 import { Tokens } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
+import { ITokensRepository } from "../interfaces/token.interface";
 
-export class PrismaTokensRepository {
+export class PrismaTokensRepository  implements ITokensRepository{
   async create(token: Tokens): Promise<Tokens> {
     const query = await prisma.tokens.create({
       data: {

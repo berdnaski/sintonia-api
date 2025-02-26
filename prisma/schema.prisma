@@ -36,6 +36,7 @@ model User {
   coupleAsUser1      Couple?        @relation("CoupleUser1")
   coupleAsUser2      Couple?        @relation("CoupleUser2")
   Tokens             Tokens[]       @relation("Tokens")
+  invites   CoupleInvite[] @relation("Inviter")
 
   @@map("users")
 }
@@ -52,6 +53,18 @@ model Couple {
   aiResponses        AIResponse[] @relation
 
   @@map("couples")
+}
+
+model CoupleInvite {
+  id          String   @id @default(uuid())
+  inviterId   String
+  inviteeEmail String
+  token       String   @unique
+  expiresAt   Int
+  createdAt   DateTime @default(now())
+  inviter     User     @relation("Inviter", fields: [inviterId], references: [id])
+
+  @@map("couple_invites")
 }
 
 model Signal {

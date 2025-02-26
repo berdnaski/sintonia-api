@@ -1,8 +1,8 @@
 import { User } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
-import { CreateUser, UserUpdate } from "../interfaces/user.interface";
+import { CreateUser, IUserRepository, UserUpdate } from "../interfaces/user.interface";
 
-export class PrismaUserRepository {
+export class PrismaUserRepository implements IUserRepository {
   async create(user: CreateUser): Promise<User | null> {
     const query = await prisma.user.create({
       data: {
@@ -31,7 +31,7 @@ export class PrismaUserRepository {
     return !!query;
   }
 
-  async findOne(ident: string): Promise<User | null> {
+  async findOne(ident: string): Promise<User> {
     const query = await prisma.user.findFirst({
       where: {
         OR: [{ email: ident }, { id: ident }],
@@ -41,11 +41,7 @@ export class PrismaUserRepository {
       }
     });
 
-    if (!query) {
-      return null;
-    }
-
-    return query as unknown as User;
+    return query as User;
   }
 
   async findAll(): Promise<User[]> {

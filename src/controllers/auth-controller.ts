@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { CreateUser, UserLogin } from "../interfaces/user.interface";
 import { AuthService } from "../services/authService/auth-service";
-import { hashPassword } from "../utils/hash";
 
 export class AuthController {
   private authService: AuthService;

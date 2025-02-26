@@ -1,32 +1,50 @@
-import { Couple } from "@prisma/client";
+import { Couple, CoupleInvite } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
-import { CoupleRepository } from "../interfaces/couple.interface";
+import { ICoupleRepository } from "../interfaces/couple.interface";
 
-export class PrismaCoupleRepository implements CoupleRepository {
-  async create(couple: Couple): Promise<Couple> {
-    const coupleData = await prisma.couple.create({
-      data: {
-        relationshipStatus: couple.relationshipStatus,
-        user1Id: couple.user1Id,
-        user2Id: couple.user2Id,
-      },
-      include: {
-        user1: true,
-        user2: true,
-      },
+export class PrismaCoupleRepository implements ICoupleRepository {
+  async findCoupleByUserId(userId: string): Promise<Couple | null> {
+    return prisma.couple.findFirst({
+      where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
     });
-
-    return coupleData as unknown as Couple;
   }
 
-  async findById(id: string): Promise<Couple | null> {
-    const query = await prisma.couple.findUnique({
-      where: { id },
-      include: { user1: true, user2: true },
+  async createCouple(user1Id: string, user2Id: string, status: string): Promise<Couple> {
+    return prisma.couple.create({
+      data: { user1Id, user2Id, relationshipStatus: status },
     });
+  }
 
-    if (!query) return null;
+  async deleteCouple(id: string): Promise<void> {
+    prisma.couple.delete({ where: { id } });
+  }
 
-    return query as unknown as Couple;
+  async createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite> {
+    return prisma.coupleInvite.create({
+      data: {
+        inviterId: data.inviterId,
+        inviteeEmail: data.inviteeEmail,
+        token: data.token,
+        expiresAt: data.expiresAt,
+      },
+    });
+  }
+
+  async findInviteByToken(token: string): Promise<CoupleInvite | null> {
+    return prisma.coupleInvite.findUnique({ where: { token } });
+  }
+
+  async deleteInvite(id: string): Promise<void> {
+    prisma.coupleInvite.delete({ where: { id } });
+  }
+
+  async acceptInvite(inviterId: string, inviteeId: string): Promise<Couple> {
+    return prisma.couple.create({
+      data: {
+        user1Id: inviterId,
+        user2Id: inviteeId,
+        relationshipStatus: "active",
+      },
+    });
   }
 }

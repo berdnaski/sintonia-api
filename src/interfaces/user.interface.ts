@@ -40,7 +40,7 @@ export interface IUserRepository {
   create(user: CreateUser): Promise<User | null>;
   exists(ident: string): Promise<boolean>;
   save(id: string, updateData: UserUpdate): Promise<User>
-  findOne(ident: string): Promise<User | null>;
+  findOne(ident: string): Promise<User>;
   findAll(): Promise<User[]>;
   delete(id: string): Promise<User>
 }
