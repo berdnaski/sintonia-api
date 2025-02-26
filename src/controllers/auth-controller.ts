@@ -14,7 +14,11 @@ export class AuthController {
 
     const validateBody = CreateUser.safeParse({ name, email, password });
     if (!validateBody.success) {
-      return reply.status(400).send({ error: validateBody.error.message });
+      const errors = validateBody.error.flatten().fieldErrors
+      return reply.status(400).send({
+        message: 'Invalid data.',
+        errors,
+      });
     }
 
     const { user, token } = await this.authService.register({ name, email, password });
@@ -23,9 +27,18 @@ export class AuthController {
   }
 
   async login(req: FastifyRequest<{ Body: UserLogin }>, reply: FastifyReply) {
-    const userData = req.body;
+    const { email, password } = req.body;
 
-    const { user, token } = await this.authService.login(userData);
+    const validateBody = UserLogin.safeParse({ email, password });
+    if (!validateBody.success) {
+      const errors = validateBody.error.flatten().fieldErrors
+      return reply.status(400).send({
+        message: 'Invalid data.',
+        errors,
+      });
+    }
+
+    const { user, token } = await this.authService.login({ email, password });
 
     reply.status(200).send({ user, token });
   }
