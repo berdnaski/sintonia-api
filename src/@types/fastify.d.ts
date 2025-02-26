@@ -1,9 +1,9 @@
-import 'fastify';
+import "@fastify/jwt"
 
-declare module 'fastify' {
-  interface FastifyRequest {
+declare module "@fastify/jwt" {
+  export interface FastifyJWT {
     user: {
-      id: string;
+      sub: string;
     };
   }
 }

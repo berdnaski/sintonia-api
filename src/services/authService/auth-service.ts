@@ -31,8 +31,9 @@ class AuthService {
     })
 
     const token = this.fastify.jwt.sign({
-      sub: user?.id
-    })
+      id: user?.id,
+      email: user?.email,
+    });
 
     return {
       user,
@@ -46,18 +47,15 @@ class AuthService {
     if (!user) {
       throw new Error("User not found");
     }
-
-    console.log("User pas from db:", user.password);
     const isValidPassword = await verifyPassword(data.password, user.password);
-
-    console.log("Password match result:", isValidPassword);
 
     if (isValidPassword === false) {
       throw new Error("Invalid password");
     }
 
     const token = this.fastify.jwt.sign({
-      sub: user.id
+      id: user?.id,
+      email: user?.email,
     });
 
     return {

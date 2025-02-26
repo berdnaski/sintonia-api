@@ -2,6 +2,7 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { CreateCoupleInvite } from '../interfaces/couple.interface';
 import { CreateUser } from '../interfaces/user.interface';
 import { CoupleService } from '../services/coupleService/couple-service';
+import type { User } from '@prisma/client';
 
 export class CoupleController {
   private coupleService: CoupleService;
@@ -12,7 +13,12 @@ export class CoupleController {
 
   async invitePartner(req: FastifyRequest<{ Body: CreateCoupleInvite }>, reply: FastifyReply) {
     const { email } = req.body
-    const userId = (req.user as { id: string }).id;
+
+    const user = req.user as User;
+    
+    const userId = user.id;
+
+    console.log("userId", userId);
 
     const validateBody = CreateCoupleInvite.safeParse({ email });
     if (!validateBody.success) {

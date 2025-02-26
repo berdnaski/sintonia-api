@@ -22,9 +22,9 @@ export class CoupleService {
 
   async invitePartner(inviterId: string, guestEmail: string) {
     const inviter = await this.userRepository.findOne(inviterId);
-    // if (!inviter) {
-    //   throw new Error('O Usuário que envia o convite não encontrado.');
-    // }
+     if (!inviter) {
+       throw new Error('O Usuário que envia o convite não encontrado.');
+     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
     if (inviterCouple) {
@@ -32,11 +32,13 @@ export class CoupleService {
     }
 
     const guestUser = await this.userRepository.findOne(guestEmail);
-    if (guestUser) {
-      const guestCouple = await this.coupleRepository.findCoupleByUserId(guestUser.id);
-      if (guestCouple) {
-        throw new Error('O convidado já está em um casal.');
-      }
+    if (!guestUser) {
+      throw new Error('Usuário convidado não encontrado.');
+    }
+
+    const guestCouple = await this.coupleRepository.findCoupleByUserId(guestUser.id);
+    if (guestCouple) {
+      throw new Error('O convidado já está em um casal.');
     }
 
     const invite = await this.coupleRepository.createInvite({
