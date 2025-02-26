@@ -14,9 +14,9 @@ export class UserController {
     return reply.status(200).send(users);
   }
 
-  async findById(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  async findOne(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = req.params;
-    const user = await this.userService.findById(id);
+    const user = await this.userService.findOne(id);
     return reply.status(200).send(user);
   }
 

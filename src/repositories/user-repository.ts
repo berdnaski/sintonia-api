@@ -17,7 +17,7 @@ export class PrismaUserRepository implements PrismaUserRepository {
       },
     });
 
-    if (!query) return null;
+    if (!query) return null; 
 
     return query;
   }

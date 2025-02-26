@@ -13,7 +13,7 @@ export async function userRoutes(app: FastifyInstance) {
   });
 
   app.get<{ Params: { id: string } }>('/users/:id', async (req, reply) => {
-    await userController.findById(req, reply);
+    await userController.findOne(req, reply);
   });
 
   app.delete<{ Params: { id: string } }>('/users/:id', async (req, reply) => {
