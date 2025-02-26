@@ -1,29 +1,42 @@
+import { User } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
-import type { UserRepository, UserResponse, UserUpdate } from "../../interfaces/user.interface";
+import { prisma } from "../../database/prisma-client";
+import type { IUserRepository, UserUpdate } from "../../interfaces/user.interface";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 
 class UserService {
   private fastify: FastifyInstance;
-  private userRepository: UserRepository;
+  private userRepository: IUserRepository;
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
     this.userRepository = new PrismaUserRepository();
   }
 
-  async findAll(): Promise<UserResponse> {
+  async findAll(): Promise<User[]> {
     const users = await this.userRepository.findAll();
 
-    return { users }
+    return users as unknown as User[];
   }
 
-  async findOne(id: string) {
-    const user = await this.userRepository.findOne(id);
+  async findOne(ident: string): Promise<User | null> {
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: ident },
+          { email: ident },
+        ]
+      },
+    });
 
-    return { user };
+    if (!user) {
+      return null
+    }
+
+    return user as unknown as User
   }
 
-  async delete(id: string) {
+  async delete(id: string): Promise<User> {
     const user = await this.userRepository.findOne(id);
 
     if (!user) {
@@ -31,9 +44,10 @@ class UserService {
     }
 
     await this.userRepository.delete(id);
+    return user
   }
 
-  async update(id: string, updateData: UserUpdate) {
+  async save(id: string, updateData: UserUpdate): Promise<User> {
     const user = await this.userRepository.findOne(id);
 
     if (!user) {
@@ -42,7 +56,7 @@ class UserService {
 
     const updatedUser = await this.userRepository.save(id, updateData);
 
-    return { user: updatedUser };
+    return { user: updatedUser } as unknown as User;
   }
 }
 

@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import type { CreateUser, UserLogin, UserRepository } from "../../interfaces/user.interface";
+import type { CreateUser, UserLogin, IUserRepository } from "../../interfaces/user.interface";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 import { hashPassword, verifyPassword } from "../../utils/hash";
 
 class AuthService {
   private fastify: FastifyInstance;
-  private userRepository: UserRepository;
+  private userRepository: IUserRepository;
 
   constructor(fastify: FastifyInstance) {
     this.fastify = fastify;
@@ -47,7 +47,7 @@ class AuthService {
 
     const isValidPassword = await verifyPassword(data.password, user.password);
 
-    if (!isValidPassword) {
+    if (isValidPassword === false) {
       throw new Error("Invalid password");
     }
 
@@ -64,3 +64,5 @@ class AuthService {
 
 export { AuthService };
 
+// Primeira senha > $2b$10$m8WAmiMWXgu.muzbBk9scuktMj./Y9DtaB0Mt0264pif1IcS6wrS
+// Segunda senha > $2b$10$XzhzUsXkZekTB4PI4ooohuMCS8sjgnnYCpwlZtTW5ka14Fz3qM38G

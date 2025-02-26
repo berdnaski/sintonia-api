@@ -3,13 +3,13 @@ import { prisma } from "../database/prisma-client";
 import { CreateUser, UserUpdate } from "../interfaces/user.interface";
 import { hashPassword } from "../utils/hash";
 
-export class PrismaUserRepository implements PrismaUserRepository {
+export class PrismaUserRepository {
   async create(user: CreateUser): Promise<User | null> {
     const query = await prisma.user.create({
       data: {
         name: user.name,
         email: user.email,
-        password: await hashPassword(user.password.toString()),
+        password: user.password,
       },
       include: {
         subscriptions: true,
@@ -17,7 +17,7 @@ export class PrismaUserRepository implements PrismaUserRepository {
       },
     });
 
-    if (!query) return null; 
+    if (!query) return null;
 
     return query;
   }

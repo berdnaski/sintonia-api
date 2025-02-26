@@ -23,4 +23,12 @@ export async function userRoutes(app: FastifyInstance) {
   app.put<{ Params: { id: string }, Body: UserUpdate }>('/users/:id', async (req, reply) => {
     await userController.update(req, reply);
   });
+
+  app.get<{ Params: { email: string } }>("/users/recovery/send/:email", async (req, reply) => {
+    await userController.sendRecoveryEmail(req, reply)
+  })
+
+  app.post<{ Params: { tokenId: string }, Body: { password: string } }>("/users/recovery/reset/:tokenId", async (req, reply) => {
+    await userController.RecoveryUser(req, reply)
+  })
 }

@@ -33,13 +33,13 @@ export interface UserUpdate {
   name?: string;
   email?: string;
   password?: string;
-  avatarUrl?: string;
+  avatarUrl?: string | null;
 }
 
-export interface UserRepository {
+export interface IUserRepository {
   create(user: CreateUser): Promise<User | null>;
   exists(ident: string): Promise<boolean>;
-  save(id: string, data: UserUpdate): Promise<User>
+  save(id: string, updateData: UserUpdate): Promise<User>
   findOne(ident: string): Promise<User | null>;
   findAll(): Promise<User[]>;
   delete(id: string): Promise<User>

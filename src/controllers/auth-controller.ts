@@ -1,6 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { CreateUser, UserLogin } from "../interfaces/user.interface";
 import { AuthService } from "../services/authService/auth-service";
+import { hashPassword } from "../utils/hash";
 
 export class AuthController {
   private authService: AuthService;
@@ -21,7 +22,9 @@ export class AuthController {
       });
     }
 
-    const { user, token } = await this.authService.register({ name, email, password });
+    const hashedPassword = await hashPassword(password);
+
+    const { user, token } = await this.authService.register({ name, email, password: hashedPassword });
 
     reply.status(201).send({ user, token });
   }
