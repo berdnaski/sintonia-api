@@ -11,6 +11,11 @@ import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites
 import { PrismaCoupleRepository } from "../../repositories/couple-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 import { prisma } from "../../database/prisma-client";
+import { Either, left, right } from "../../errors/either";
+import { RequiredParametersError } from "../../errors/required-parameters.error";
+
+type InviteResponse = Either<RequiredParametersError, Couple>;
+type CoupleResponse = Either<RequiredParametersError, Couple>;
 
 export class CoupleService {
   private coupleRepository: ICoupleRepository;
@@ -25,30 +30,30 @@ export class CoupleService {
     this.mailProvider = new MailProvider();
   }
 
-  async invitePartner(inviterId: string, inviteeEmail: string) {
+  async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
     const inviter = await this.userRepository.findOne(inviterId);
     if (!inviter) {
-      throw new Error("User sending the invitation not found.");
+      return left(new RequiredParametersError("Usuário que enviou o convite não foi encontrado.", 400))
     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
     if (inviterCouple) {
-      throw new Error("You are already in a couple.");
+      return left(new RequiredParametersError("Você já pertence a um relacionamento."));
     }
 
     const invitee = await this.userRepository.findOne(inviteeEmail);
     if (!invitee) {
-      throw new Error("Guest user not found.");
+      return left(new RequiredParametersError("Usuário convidado não foi encontrado.", 400))
     }
 
     const inviteeCouple = await this.coupleRepository.findCoupleByUserId(invitee.id);
     if (inviteeCouple) {
-      throw new Error("The guest is already in a couple.");
+      return left(new RequiredParametersError("O Convidado já pertence a um relacionamento."));
     }
 
     const existingInvite = await this.coupleInviteRepository.findInviteByInviteeEmail(inviteeEmail);
     if (existingInvite && !existingInvite.used) {
-      throw new Error("There is already a pending invitation for this email.");
+      return left(new RequiredParametersError("Já existe um convite pendente para esse email"))
     }
 
     const invite = await this.coupleInviteRepository.create({
@@ -74,7 +79,13 @@ export class CoupleService {
       body: InviteToCoupleMailTemplate(inviter.name, invitee.name, invite.token),
     });
 
-    return { message: "Invitation sent successfully" };
+    return right({
+      id: invite.id,
+      relationshipStatus: 'pending',
+      user1Id: inviterId,
+      user2Id: invitee.id,
+      createdAt: invite.createdAt || new Date() 
+    });
   }
 
   async cancelInvite(inviteId: string, inviterId: string): Promise<{ message: string }> {
