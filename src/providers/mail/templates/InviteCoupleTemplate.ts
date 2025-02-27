@@ -1,6 +1,6 @@
 import { sintoniaConfig } from "../../../config/api";
 
-export const InviteToCoupleMailTemplate = (name: string, inviterName: string, token: string) => {
+export const InviteToCoupleMailTemplate = (inviterName: string, guestUser: string, token: string) => {
   return `
     <!DOCTYPE html>
     <html lang="pt-BR">
@@ -23,7 +23,7 @@ export const InviteToCoupleMailTemplate = (name: string, inviterName: string, to
               <!-- Corpo -->
               <tr>
                 <td style="padding: 40px 20px; text-align: center;">
-                  <h2 style="color: #333333; font-size: 20px; margin: 0 0 20px;">Querido(a) ${name},</h2>
+                  <h2 style="color: #333333; font-size: 20px; margin: 0 0 20px;">Querido(a) ${guestUser},</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px;">É com muito carinho que ${inviterName} te convida para viverem juntos uma aventura especial no ${sintoniaConfig.product}! Que tal embarcar nessa jornada cheia de amor e momentos inesquecíveis?</p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px;">Se o seu coração diz sim, é só clicar no botão abaixo para aceitar esse convite tão especial.</p>
                   <a href="${sintoniaConfig.frontend}/couple/accept/${token} " style="display: inline-block; padding: 12px 24px; background-color: #ff6f61; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 16px; font-weight: bold;">Sim, quero fazer parte!</a>

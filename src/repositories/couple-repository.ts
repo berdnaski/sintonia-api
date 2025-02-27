@@ -43,17 +43,4 @@ export class PrismaCoupleRepository implements ICoupleRepository {
       },
     });
   }
-
-  async findInviteByToken(token: string): Promise<CoupleInvite | null> {
-    
-    const invite = await prisma.coupleInvite.findFirst({ 
-      where: { 
-        OR: [
-          { token },
-          { inviterId: token }
-        ]
-      }
-    });
-    return invite;
-  }
 }

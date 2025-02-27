@@ -17,7 +17,7 @@ export async function coupleRoutes(app: FastifyInstance) {
     await coupleController.cancelInvite(req, reply);
   });
 
-  app.post<{ Params: { token: string }, Body: { inviteeId: string } }>('/couple/accept/:token', async (req, reply) => {
+  app.post<{ Params: { token: string } }>('/couple/accept/:token', async (req, reply) => {
     await coupleController.acceptInvite(req, reply);
   });
 }

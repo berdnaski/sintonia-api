@@ -1,21 +1,22 @@
+import type { User } from '@prisma/client';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { CreateCoupleInvite } from '../interfaces/couple.interface';
-import { CreateUser } from '../interfaces/user.interface';
+import { CoupleInviteService } from '../services/coupleInvitesService/coupleInvites-.service';
 import { CoupleService } from '../services/coupleService/couple-service';
-import type { User } from '@prisma/client';
 
 export class CoupleController {
   private coupleService: CoupleService;
+  private coupleInviteService: CoupleInviteService;
 
   constructor(app: FastifyInstance) {
     this.coupleService = new CoupleService(app);
+    this.coupleInviteService = new CoupleInviteService();
   }
 
   async invitePartner(req: FastifyRequest<{ Body: CreateCoupleInvite }>, reply: FastifyReply) {
     const { email } = req.body
 
     const user = req.user as User;
-    
     const userId = user.id;
 
     const validateBody = CreateCoupleInvite.safeParse({ email });
@@ -32,30 +33,27 @@ export class CoupleController {
   }
 
   async cancelInvite(req: FastifyRequest<{ Params: { inviteId: string } }>, reply: FastifyReply) {
-      const { inviteId } = req.params;
-      
-      if (!inviteId) {
-        return reply.status(400).send({ message: 'Invalid invite ID' });
-      }
+    const { inviteId } = req.params;
+    const user = req.user as User;
+    const inviterId = user.id;
 
-      const result = await this.coupleService.cancelInvite(inviteId);
-      return reply.status(200).send(result);
+    if (!inviteId) {
+      return reply.status(400).send({ message: 'Invalid invite ID' });
+    }
+
+    const result = await this.coupleService.cancelInvite(inviteId, inviterId);
+    return reply.status(200).send(result);
   }
 
-  async acceptInvite(req: FastifyRequest<{ Params: { token: string }, Body: { inviteeId: string } }>, reply: FastifyReply) {
-    const { token } = req.params;  
-    const { inviteeId } = req.body;  
-  
-    const user = req.user as User;  
-    const inviteeIdFromUser = user.id;  
-    
-    if (inviteeIdFromUser !== inviteeId) {
-      return reply.status(400).send({ message: 'O ID do convidado não corresponde ao ID do usuário autenticado.' });
-    }
+  async acceptInvite(req: FastifyRequest<{ Params: { token: string } }>, reply: FastifyReply) {
+    const { token } = req.params;
+
+    const user = req.user as User;
+    const inviteeId = user.id;
 
     const couple = await this.coupleService.acceptInvite(token, inviteeId);
     return reply.status(200).send({
-      message: 'Convite aceito com sucesso!',
+      message: 'Invitation accepted successfully!',
       couple,
     });
   }

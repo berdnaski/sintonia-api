@@ -1,117 +1,129 @@
-import dayjs from 'dayjs';
-import { FastifyInstance } from 'fastify';
-import { v4 as uuidv4 } from 'uuid';
-import { ICoupleRepository } from '../../interfaces/couple.interface';
-import { IUserRepository } from '../../interfaces/user.interface';
-import { MailProvider } from '../../providers/mail/implementations/MailProvider';
-import { IMailProvider } from '../../providers/mail/models/IMailProvider';
-import { InviteToCoupleMailTemplate } from '../../providers/mail/templates/InviteCoupleTemplate';
-import { PrismaCoupleRepository } from '../../repositories/couple-repository';
-import { PrismaUserRepository } from '../../repositories/user-repository';
-import type { Couple } from '@prisma/client';
+import { Couple } from "@prisma/client";
+import dayjs from "dayjs";
+import { FastifyInstance } from "fastify";
+import { v4 as uuidv4 } from "uuid";
+import { ICoupleInviteRepository } from "../../interfaces/couple-invite.interface";
+import { ICoupleRepository } from "../../interfaces/couple.interface";
+import { IUserRepository } from "../../interfaces/user.interface";
+import { MailProvider } from "../../providers/mail/implementations/MailProvider";
+import { InviteToCoupleMailTemplate } from "../../providers/mail/templates/InviteCoupleTemplate";
+import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites-repository";
+import { PrismaCoupleRepository } from "../../repositories/couple-repository";
+import { PrismaUserRepository } from "../../repositories/user-repository";
 
 export class CoupleService {
   private coupleRepository: ICoupleRepository;
+  private coupleInviteRepository: ICoupleInviteRepository;
   private userRepository: IUserRepository;
-  private mailProvider: IMailProvider;
+  private mailProvider: MailProvider;
 
   constructor(fastify: FastifyInstance) {
     this.coupleRepository = new PrismaCoupleRepository();
+    this.coupleInviteRepository = new PrismaCoupleInvitesRepository();
     this.userRepository = new PrismaUserRepository();
     this.mailProvider = new MailProvider();
   }
 
-  async invitePartner(inviterId: string, guestEmail: string) {
+  async invitePartner(inviterId: string, inviteeEmail: string) {
     const inviter = await this.userRepository.findOne(inviterId);
     if (!inviter) {
-      throw new Error('O Usuário que envia o convite não encontrado.');
+      throw new Error("User sending the invitation not found.");
     }
-  
+
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
     if (inviterCouple) {
-      throw new Error('Você já está em um casal.');
+      throw new Error("You are already in a couple.");
     }
-  
-    const guestUser = await this.userRepository.findOne(guestEmail);
-    if (!guestUser) {
-      throw new Error('Usuário convidado não encontrado.');
+
+    const invitee = await this.userRepository.findOne(inviteeEmail);
+    if (!invitee) {
+      throw new Error("Guest user not found.");
     }
-  
-    const guestCouple = await this.coupleRepository.findCoupleByUserId(guestUser.id);
-    if (guestCouple) {
-      throw new Error('O convidado já está em um casal.');
+
+    const inviteeCouple = await this.coupleRepository.findCoupleByUserId(invitee.id);
+    if (inviteeCouple) {
+      throw new Error("The guest is already in a couple.");
     }
-  
-    const invite = await this.coupleRepository.createInvite({
+
+    const existingInvite = await this.coupleInviteRepository.findInviteByInviteeEmail(inviteeEmail);
+    if (existingInvite && !existingInvite.used) {
+      throw new Error("There is already a pending invitation for this email.");
+    }
+
+    const invite = await this.coupleInviteRepository.create({
+      id: uuidv4(),
       inviterId,
-      inviteeEmail: guestEmail,
+      inviteeEmail,
       token: uuidv4(),
-      expiresAt: dayjs().add(24, 'hours').unix(),
+      expiresAt: dayjs().add(24, "hours").unix(),
+      used: false,
+      createdAt: new Date(),
     });
-  
+
     await this.mailProvider.sendMail({
       to: {
-        name: guestUser.name,
-        email: guestEmail,
+        name: invitee.name,
+        email: inviteeEmail
       },
       from: {
         name: `${process.env.MAILER_DISPLAY_NAME}`,
-        email: `${process.env.MAILER_USERNAME}`,
+        email: `${process.env.MAILER_USERNAME}`
       },
-      subject: 'Convite para formar um casal',
-      body: InviteToCoupleMailTemplate(inviter.name, guestUser.name, invite.token),
+      subject: "Convite para formar um casal",
+      body: InviteToCoupleMailTemplate(inviter.name, invitee.name, invite.token),
     });
-  
-    return { message: 'Invite send successfully' };
+
+    return { message: "Invitation sent successfully" };
   }
-  
 
-  async cancelInvite(inviteId: string): Promise<{ message: string }> {
-    try {
-      if (!inviteId) {
-        throw new Error('Invalid invite token');
-      }
-
-      const invite = await this.coupleRepository.findInviteByToken(inviteId);
-      
-      if (!invite) {
-        throw new Error('Invite not found');
-      }
-      
-      await this.coupleRepository.deleteInvite(invite.id);
-      
-      return { message: 'Invite cancelled successfully' };
-    } catch (error) {
-      throw error;
+  async cancelInvite(inviteId: string, inviterId: string): Promise<{ message: string }> {
+    const invite = await this.coupleInviteRepository.getById(inviteId);
+    if (!invite) {
+      throw new Error("Invitation not found.");
     }
+
+    if (invite.inviterId !== inviterId) {
+      throw new Error("You do not have permission to cancel this invitation.");
+    }
+
+    if (invite.used) {
+      throw new Error("Invitation has already been used.");
+    }
+
+    await this.coupleInviteRepository.remove(inviteId);
+    return { message: "Invitation cancelled successfully" };
   }
-  
-  async acceptInvite(inviterId: string, inviteeId: string): Promise<Couple> {
-    const inviter = await this.coupleRepository.findInviteByToken(inviterId);
-  
-    if (!inviter) {
-      throw new Error('Invalid inviter token');
-    }
-  
-    if (dayjs().isAfter(dayjs.unix(inviter.expiresAt))) {
-      throw new Error('Invite has expired');
+
+  async acceptInvite(token: string, inviteeId: string): Promise<Couple> {
+    const invite = await this.coupleInviteRepository.findInviteByToken(token);
+    if (!invite) {
+      throw new Error("Invitation not found or invalid.");
     }
 
-    if (inviter.inviteeEmail !== inviteeId) {
-      throw new Error('Invalid invitee email');  
+    if (invite.used) {
+      throw new Error("Invitation has already been used.");
     }
-  
-    const guestCouple = await this.coupleRepository.findCoupleByUserId(inviteeId);
-  
-    if (guestCouple) {
-      throw new Error('User is already in a couple');
+
+    if (dayjs().isAfter(dayjs.unix(invite.expiresAt))) {
+      throw new Error("Invitation has expired.");
     }
-  
-    const couple = await this.coupleRepository.createCouple(inviter.inviterId, inviteeId, "active");
-  
-    await this.coupleRepository.deleteInvite(inviter.id);
-  
+    
+    const inviteeCouple = await this.coupleRepository.findCoupleByUserId(inviteeId);
+    if (inviteeCouple) {
+      throw new Error("You are already in a couple.");
+    }
+    
+    const inviterCouple = await this.coupleRepository.findCoupleByUserId(invite.inviterId);
+    if (inviterCouple) {
+      throw new Error("The user who sent the invite is already in a couple.");
+    }
+
+    const invitee = await this.userRepository.findOne(invite.inviteeEmail);
+    const couple = await this.coupleRepository.createCouple(invite.inviterId, invitee.id, "active");
+
+    invite.used = true;
+    await this.coupleInviteRepository.save(invite);
+
     return couple;
   }
-  
 }
