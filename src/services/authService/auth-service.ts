@@ -1,7 +1,18 @@
+import { User } from "@prisma/client";
 import { FastifyInstance } from "fastify";
-import { CreateUser, UserLogin, IUserRepository } from "../../interfaces/user.interface";
+import { Either, left, right } from "../../errors/either";
+import { RequiredParametersError } from "../../errors/required-parameters.error";
+import { CreateUser, IUserRepository, UserLogin } from "../../interfaces/user.interface";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 import { hashPassword, verifyPassword } from "../../utils/hash";
+
+type UserResponse = {
+  user: User | null;
+  token: string;
+}
+
+type registerResponse = Either<RequiredParametersError, UserResponse>;
+type loginResponse = Either<RequiredParametersError, UserResponse>;
 
 class AuthService {
   private fastify: FastifyInstance;
@@ -12,11 +23,11 @@ class AuthService {
     this.userRepository = new PrismaUserRepository();
   }
 
-  async register(data: CreateUser) {
+  async register(data: CreateUser): Promise<registerResponse> {
     const verifyIfExists = await this.userRepository.findOne(data.email);
 
     if (verifyIfExists) {
-      throw new Error("Email already in use");
+      return left(new RequiredParametersError("Email already in use"));
     }
 
     const hashedPassword = await hashPassword(data.password);
@@ -33,22 +44,19 @@ class AuthService {
       email: user?.email,
     });
 
-    return {
-      user,
-      token
-    };
+    return right({ user, token });
   }
 
-  async login(data: UserLogin) {
+  async login(data: UserLogin): Promise<loginResponse> {
     const user = await this.userRepository.findOne(data.email);
 
     if (!user) {
-      throw new Error("User not found");
+      return left(new RequiredParametersError("User not found"));
     }
     const isValidPassword = await verifyPassword(data.password, user.password);
 
     if (isValidPassword === false) {
-      throw new Error("Invalid password");
+      return left(new RequiredParametersError("Invalid password"));
     }
 
     const token = this.fastify.jwt.sign({
@@ -56,10 +64,10 @@ class AuthService {
       email: user?.email,
     });
 
-    return {
+    return right({
       user,
       token
-    };
+    });
   }
 }
 

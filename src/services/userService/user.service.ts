@@ -1,8 +1,15 @@
 import { User } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { prisma } from "../../database/prisma-client";
+import { Either, left, right } from "../../errors/either";
+import { RequiredParametersError } from "../../errors/required-parameters.error";
 import type { IUserRepository, UserUpdate } from "../../interfaces/user.interface";
 import { PrismaUserRepository } from "../../repositories/user-repository";
+
+type findAllResponse = Either<RequiredParametersError, User[]>
+type findOneResponse = Either<RequiredParametersError, User>
+type deleteResponse = Either<RequiredParametersError, User>
+type saveResponse = Either<RequiredParametersError, User>
 
 class UserService {
   private fastify: FastifyInstance;
@@ -13,13 +20,13 @@ class UserService {
     this.userRepository = new PrismaUserRepository();
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<findAllResponse> {
     const users = await this.userRepository.findAll();
 
-    return users as unknown as User[];
+    return right(users)
   }
 
-  async findOne(ident: string): Promise<User | null> {
+  async findOne(ident: string): Promise<findOneResponse> {
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -30,34 +37,35 @@ class UserService {
     });
 
     if (!user) {
-      return null
+      return left(new RequiredParametersError("User not found"));
     }
 
-    return user as unknown as User
+    return right(user)
   }
 
-  async delete(id: string): Promise<User> {
+  async delete(id: string): Promise<deleteResponse> {
     const user = await this.userRepository.findOne(id);
 
     if (!user) {
-      throw new Error("User not found");
+      return left(new RequiredParametersError("User not found"));
     }
 
     await this.userRepository.delete(id);
-    return user
+    return right(user)
   }
 
-  async save(id: string, updateData: UserUpdate): Promise<User> {
+  async save(id: string, updateData: UserUpdate): Promise<saveResponse> {
     const user = await this.userRepository.findOne(id);
 
     if (!user) {
-      throw new Error("User not found");
+      return left(new RequiredParametersError("User not found"));
     }
 
     const updatedUser = await this.userRepository.save(id, updateData);
 
-    return { user: updatedUser } as unknown as User;
+    return right(updatedUser)
   }
 }
 
 export { UserService };
+

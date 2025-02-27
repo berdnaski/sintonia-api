@@ -21,9 +21,14 @@ export class AuthController {
       });
     }
 
-    const { user, token } = await this.authService.register({ name, email, password });
-
-    reply.status(201).send({ user, token });
+    const result = await this.authService.register({ name, email, password });
+    if (result.isLeft()) {
+      const error = result.value;
+      return reply.status(400).send({ message: error.message });
+    } else {
+      const { user, token } = result.value;
+      reply.status(201).send({ user, token });
+    }
   }
 
   async login(req: FastifyRequest<{ Body: UserLogin }>, reply: FastifyReply) {
@@ -38,8 +43,13 @@ export class AuthController {
       });
     }
 
-    const { user, token } = await this.authService.login({ email, password });
-
-    reply.status(200).send({ user, token });
+    const result = await this.authService.login({ email, password });
+    if (result.isLeft()) {
+      const error = result.value;
+      return reply.status(400).send({ message: error.message });
+    } else {
+      const { user, token } = result.value;
+      reply.status(200).send({ user, token });
+    }
   }
 }

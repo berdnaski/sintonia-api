@@ -2,6 +2,8 @@ import { Couple } from "@prisma/client";
 import dayjs from "dayjs";
 import { FastifyInstance } from "fastify";
 import { v4 as uuidv4 } from "uuid";
+import { Either, left, right } from "../../errors/either";
+import { RequiredParametersError } from "../../errors/required-parameters.error";
 import { ICoupleInviteRepository } from "../../interfaces/couple-invite.interface";
 import { ICoupleRepository } from "../../interfaces/couple.interface";
 import { IUserRepository } from "../../interfaces/user.interface";
@@ -10,12 +12,13 @@ import { InviteToCoupleMailTemplate } from "../../providers/mail/templates/Invit
 import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites-repository";
 import { PrismaCoupleRepository } from "../../repositories/couple-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
-import { prisma } from "../../database/prisma-client";
-import { Either, left, right } from "../../errors/either";
-import { RequiredParametersError } from "../../errors/required-parameters.error";
 
 type InviteResponse = Either<RequiredParametersError, Couple>;
-type CoupleResponse = Either<RequiredParametersError, Couple>;
+type CancelInviteResponse = Either<RequiredParametersError, string>;
+type AcceptInviteResponse = Either<RequiredParametersError, Couple>;
+type DeleteCoupleResponse = Either<RequiredParametersError, string>;
+type FindOneCoupleResponse = Either<RequiredParametersError, Couple>;
+type FindAllCoupleResponse = Either<RequiredParametersError, Couple[]>;
 
 export class CoupleService {
   private coupleRepository: ICoupleRepository;
@@ -33,27 +36,27 @@ export class CoupleService {
   async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
     const inviter = await this.userRepository.findOne(inviterId);
     if (!inviter) {
-      return left(new RequiredParametersError("Usuário que enviou o convite não foi encontrado.", 400))
+      return left(new RequiredParametersError("User who sent the invitation was not found.", 400))
     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
     if (inviterCouple) {
-      return left(new RequiredParametersError("Você já pertence a um relacionamento."));
+      return left(new RequiredParametersError("You already belong in a relationship."));
     }
 
     const invitee = await this.userRepository.findOne(inviteeEmail);
     if (!invitee) {
-      return left(new RequiredParametersError("Usuário convidado não foi encontrado.", 400))
+      return left(new RequiredParametersError("Guest user not found.", 400))
     }
 
     const inviteeCouple = await this.coupleRepository.findCoupleByUserId(invitee.id);
     if (inviteeCouple) {
-      return left(new RequiredParametersError("O Convidado já pertence a um relacionamento."));
+      return left(new RequiredParametersError("The Guest is already in a relationship."));
     }
 
     const existingInvite = await this.coupleInviteRepository.findInviteByInviteeEmail(inviteeEmail);
     if (existingInvite && !existingInvite.used) {
-      return left(new RequiredParametersError("Já existe um convite pendente para esse email"))
+      return left(new RequiredParametersError("There is already a pending invitation for that email."))
     }
 
     const invite = await this.coupleInviteRepository.create({
@@ -84,50 +87,50 @@ export class CoupleService {
       relationshipStatus: 'pending',
       user1Id: inviterId,
       user2Id: invitee.id,
-      createdAt: invite.createdAt || new Date() 
+      createdAt: invite.createdAt || new Date()
     });
   }
 
-  async cancelInvite(inviteId: string, inviterId: string): Promise<{ message: string }> {
+  async cancelInvite(inviteId: string, inviterId: string): Promise<CancelInviteResponse> {
     const invite = await this.coupleInviteRepository.getById(inviteId);
     if (!invite) {
-      throw new Error("Invitation not found.");
+      return left(new RequiredParametersError("Invitation not found."));
     }
 
     if (invite.inviterId !== inviterId) {
-      throw new Error("You do not have permission to cancel this invitation.");
+      return left(new RequiredParametersError("You do not have permission to cancel this invitation."));
     }
 
     if (invite.used) {
-      throw new Error("Invitation has already been used.");
+      return left(new RequiredParametersError("Invitation has already been used."));
     }
 
     await this.coupleInviteRepository.remove(inviteId);
-    return { message: "Invitation cancelled successfully" };
+    return right("Invitation cancelled successfully")
   }
 
-  async acceptInvite(token: string, inviteeId: string): Promise<Couple> {
+  async acceptInvite(token: string, inviteeId: string): Promise<AcceptInviteResponse> {
     const invite = await this.coupleInviteRepository.findInviteByToken(token);
     if (!invite) {
-      throw new Error("Invitation not found or invalid.");
+      return left(new RequiredParametersError("Invitation not found or invalid."));
     }
 
     if (invite.used) {
-      throw new Error("Invitation has already been used.");
+      return left(new RequiredParametersError("Invitation has already been used."));
     }
 
     if (dayjs().isAfter(dayjs.unix(invite.expiresAt))) {
-      throw new Error("Invitation has expired.");
+      return left(new RequiredParametersError("Invitation has expired."));
     }
-    
+
     const inviteeCouple = await this.coupleRepository.findCoupleByUserId(inviteeId);
     if (inviteeCouple) {
-      throw new Error("You are already in a couple.");
+      return left(new RequiredParametersError("You are already in a couple."));
     }
-    
+
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(invite.inviterId);
     if (inviterCouple) {
-      throw new Error("The user who sent the invite is already in a couple.");
+      return left(new RequiredParametersError("The user who sent the invite is already in a couple."));
     }
 
     const invitee = await this.userRepository.findOne(invite.inviteeEmail);
@@ -136,30 +139,38 @@ export class CoupleService {
     invite.used = true;
     await this.coupleInviteRepository.save(invite);
 
-    return couple;
+    return right(couple);
   }
 
-  async findAll(): Promise<Couple[]> {
-    return this.coupleRepository.findAll();
-  }
+  async findAll(): Promise<FindAllCoupleResponse> {
+    const couples = await this.coupleRepository.findAll();
 
-  async findOne(id: string): Promise<Couple> {
-    const couple = await this.coupleRepository.findOne(id);
-
-    if (!couple) {
-      throw new Error("Couple not found.");
+    if (!couples) {
+      return left(new RequiredParametersError("There is no record of a couple."))
     }
 
-    return couple;
+    return right(couples)
   }
 
-  async delete(id: string): Promise<void> {
+  async findOne(id: string): Promise<FindOneCoupleResponse> {
     const couple = await this.coupleRepository.findOne(id);
 
     if (!couple) {
-      throw new Error("Couple not found.");
+      return left(new RequiredParametersError("Couple not found."));
+    }
+
+    return right(couple);
+  }
+
+  async delete(id: string): Promise<DeleteCoupleResponse> {
+    const couple = await this.coupleRepository.findOne(id);
+
+    if (!couple) {
+      return left(new RequiredParametersError("Couple not found."));
     }
 
     await this.coupleRepository.delete(id);
+
+    return right("Couple successfully deleted.")
   }
 }
