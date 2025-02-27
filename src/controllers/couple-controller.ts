@@ -32,7 +32,6 @@ export class CoupleController {
   }
 
   async cancelInvite(req: FastifyRequest<{ Params: { inviteId: string } }>, reply: FastifyReply) {
-    try {
       const { inviteId } = req.params;
       
       if (!inviteId) {
@@ -41,12 +40,23 @@ export class CoupleController {
 
       const result = await this.coupleService.cancelInvite(inviteId);
       return reply.status(200).send(result);
-    } catch (error) {
-      console.error('Controller error:', error);
-      if (error instanceof Error && error.message === 'Invite not found.') {
-        return reply.status(404).send({ message: 'Invite not found' });
-      }
-      return reply.status(500).send({ message: 'Internal server error' });
+  }
+
+  async acceptInvite(req: FastifyRequest<{ Params: { token: string }, Body: { inviteeId: string } }>, reply: FastifyReply) {
+    const { token } = req.params;  
+    const { inviteeId } = req.body;  
+  
+    const user = req.user as User;  
+    const inviteeIdFromUser = user.id;  
+    
+    if (inviteeIdFromUser !== inviteeId) {
+      return reply.status(400).send({ message: 'O ID do convidado não corresponde ao ID do usuário autenticado.' });
     }
+
+    const couple = await this.coupleService.acceptInvite(token, inviteeId);
+    return reply.status(200).send({
+      message: 'Convite aceito com sucesso!',
+      couple,
+    });
   }
 }
