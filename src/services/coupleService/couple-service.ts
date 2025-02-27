@@ -10,6 +10,7 @@ import { InviteToCoupleMailTemplate } from "../../providers/mail/templates/Invit
 import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites-repository";
 import { PrismaCoupleRepository } from "../../repositories/couple-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
+import { prisma } from "../../database/prisma-client";
 
 export class CoupleService {
   private coupleRepository: ICoupleRepository;
@@ -125,5 +126,29 @@ export class CoupleService {
     await this.coupleInviteRepository.save(invite);
 
     return couple;
+  }
+
+  async findAll(): Promise<Couple[]> {
+    return this.coupleRepository.findAll();
+  }
+
+  async findOne(id: string): Promise<Couple> {
+    const couple = await this.coupleRepository.findOne(id);
+
+    if (!couple) {
+      throw new Error("Couple not found.");
+    }
+
+    return couple;
+  }
+
+  async delete(id: string): Promise<void> {
+    const couple = await this.coupleRepository.findOne(id);
+
+    if (!couple) {
+      throw new Error("Couple not found.");
+    }
+
+    await this.coupleRepository.delete(id);
   }
 }

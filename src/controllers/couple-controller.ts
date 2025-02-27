@@ -1,4 +1,4 @@
-import type { User } from '@prisma/client';
+import type { Couple, User } from '@prisma/client';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { CreateCoupleInvite } from '../interfaces/couple.interface';
 import { CoupleInviteService } from '../services/coupleInvitesService/coupleInvites-.service';
@@ -56,5 +56,22 @@ export class CoupleController {
       message: 'Invitation accepted successfully!',
       couple,
     });
+  }
+
+  async findAll(req: FastifyRequest, reply: FastifyReply): Promise<Couple[]> {
+    const couples = await this.coupleService.findAll();
+    return reply.status(200).send(couples);
+  }
+
+  async findOne(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply): Promise<Couple> {
+    const { id } = req.params;
+    const couple = await this.coupleService.findOne(id);
+    return reply.status(200).send(couple);
+  }
+
+  async delete(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply): Promise<Couple> {
+    const { id } = req.params;
+    const couple = await this.coupleService.delete(id);
+    return reply.status(200).send(couple);
   }
 }

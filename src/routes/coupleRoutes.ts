@@ -20,4 +20,16 @@ export async function coupleRoutes(app: FastifyInstance) {
   app.post<{ Params: { token: string } }>('/couple/accept/:token', async (req, reply) => {
     await coupleController.acceptInvite(req, reply);
   });
+
+  app.get('/couples', async (req, reply) => {
+    await coupleController.findAll(req, reply);
+  })
+
+  app.get<{ Params: { id: string } }>('/couples/:id', async (req, reply) => {
+    await coupleController.findOne(req, reply);
+  })
+
+  app.delete<{ Params: { id: string } }>('/couples/:id', async (req, reply) => {
+    await coupleController.delete(req, reply);
+  })
 }

@@ -43,4 +43,26 @@ export class PrismaCoupleRepository implements ICoupleRepository {
       },
     });
   }
+
+  async findAll(): Promise<Couple[]> {
+    return prisma.couple.findMany();
+  }
+
+  async findOne(ident: string): Promise<Couple> {
+    const query = await prisma.couple.findFirst({
+      where: {
+        id: ident
+      }
+    })
+
+    return query as Couple;
+  }
+
+  async delete(id: string): Promise<Couple> {
+    const result = await prisma.couple.delete({
+      where: { id }
+    })
+
+    return result;
+  }
 }

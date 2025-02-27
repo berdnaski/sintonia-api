@@ -34,4 +34,7 @@ export interface ICoupleRepository {
   createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite>;
   deleteInvite(id: string): Promise<void>;
   acceptInvite(inviterId: string, inviteeId: string): Promise<Couple>;
+  findAll(): Promise<Couple[]>;
+  findOne(ident: string): Promise<Couple>;
+  delete(id: string): Promise<Couple>;
 }
