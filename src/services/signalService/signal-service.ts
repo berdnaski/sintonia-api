@@ -32,17 +32,16 @@ export class SignalService {
 
   async save(id: string, updateData: ISignalUpdate): Promise<saveSignalResponse> {
     const signal = await this.signalRepository.findOne(id);
-
+  
     if (!signal) {
       return left(new RequiredParametersError('Signal not found'));
     }
-
-    const updatedSignal = { ...signal, ...updateData };
-    await this.signalRepository.save(id, updatedSignal);
-
+  
+    const updatedSignal = await this.signalRepository.save(id, updateData);
+  
     return right(updatedSignal);
   }
-
+  
   async findOne(ident: string): Promise<getSignalByIdResponse> {
     const result = await this.signalRepository.findOne(ident);
 
