@@ -19,8 +19,14 @@ export class SignalService {
     this.signalRepository = new PrismaSignalRepository();
   }
 
-  async create(signal: ISignal): Promise<createSignalResponse> {
-    const result = await this.signalRepository.create(signal);
+  async create(signal: ICreateSignal): Promise<createSignalResponse> {
+    const result = await this.signalRepository.create({
+      userId: signal.userId,
+      coupleId: signal.coupleId,
+      emotion: signal.emotion,
+      note: signal.note,
+    });
+  
     return right(result);
   }
 

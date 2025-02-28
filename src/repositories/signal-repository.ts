@@ -3,10 +3,9 @@ import { prisma } from "../database/prisma-client";
 import type { ICreateSignal, ISignal, ISignalRepository, ISignalUpdate } from "../interfaces/signal.interface";
 
 export class PrismaSignalRepository implements ISignalRepository {
-  async create(signal: Signal): Promise<Signal> {
+  async create(signal: ICreateSignal): Promise<Signal> {
     const query = await prisma.signal.create({
       data: {
-        id: signal.id,
         userId: signal.userId,
         coupleId: signal.coupleId,
         emotion: signal.emotion,
@@ -60,8 +59,8 @@ export class PrismaSignalRepository implements ISignalRepository {
         emotion: signal.emotion,
         note: signal.note,
       }
-    }) as unknown as Signal[]
-}
+    }) as unknown as Signal[];
+  }
 
   async exists(ident: string): Promise<boolean> {
     const query = await prisma.signal.findFirst({
@@ -80,5 +79,4 @@ export class PrismaSignalRepository implements ISignalRepository {
 
     return result;
   }
-
 }

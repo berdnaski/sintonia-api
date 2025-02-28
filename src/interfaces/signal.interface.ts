@@ -6,8 +6,6 @@ export interface ISignal {
   coupleId: string;
   emotion: string;
   note: string | null;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface ICreateSignal {
@@ -27,10 +25,10 @@ export interface ISignalUpdate {
 }
 
 export interface ISignalRepository {
-  create(signal: Signal): Promise<Signal>;
+  create(signal: ICreateSignal): Promise<Signal>;
   save(id: string, updateData: ISignalUpdate): Promise<Signal>;
   findOne(ident: string): Promise<Signal>;
-  findAll(): Promise<Signal[]>
+  findAll(): Promise<Signal[]>;
   exists(ident: string): Promise<boolean>;
   remove(id: string): Promise<Signal>
 }
