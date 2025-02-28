@@ -27,7 +27,7 @@ export interface ISignalUpdate {
 }
 
 export interface ISignalRepository {
-  create(signal: ISignal): Promise<ICreateSignal | null>;
+  create(signal: Signal): Promise<Signal>;
   save(id: string, updateData: ISignalUpdate): Promise<Signal>;
   findOne(ident: string): Promise<Signal>;
   findAll(): Promise<Signal[]>

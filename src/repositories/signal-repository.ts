@@ -3,7 +3,7 @@ import { prisma } from "../database/prisma-client";
 import type { ICreateSignal, ISignal, ISignalRepository, ISignalUpdate } from "../interfaces/signal.interface";
 
 export class PrismaSignalRepository implements ISignalRepository {
-  async create(signal: ISignal): Promise<ICreateSignal | null> {
+  async create(signal: Signal): Promise<Signal> {
     const query = await prisma.signal.create({
       data: {
         id: signal.id,
@@ -17,8 +17,6 @@ export class PrismaSignalRepository implements ISignalRepository {
         couple: true,
       },
     });
-
-    if (!query) return null;
 
     return query;
   }
