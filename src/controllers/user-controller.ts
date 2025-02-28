@@ -1,4 +1,3 @@
-import { User } from "@prisma/client";
 import dayjs from "dayjs";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { v4 } from "uuid";
@@ -23,21 +22,23 @@ export class UserController {
   async sendRecoveryEmail(req: FastifyRequest<{ Params: { email: string } }>, reply: FastifyReply) {
     const { email } = req.params;
 
-    const userExists = await this.userService.findOne(email);
-
-    if (!userExists) {
-      throw new Error("This email not exists.");
+    const userResult = await this.userService.findOne(email);
+    if (userResult.isLeft()) {
+      return reply.status(400).send({ message: "This email does not exist." });
     }
+    const account = userResult.value;
 
-    const account = userExists as User
-
-    const token = await this.tokenService.createToken({
+    const tokenResult = await this.tokenService.createToken({
       id: v4(),
-      type: 'recovery',
+      type: "recovery",
       used: false,
       user_id: account.id,
-      expiresIn: dayjs().add(1, 'hour').unix(),
-    })
+      expiresIn: dayjs().add(1, "hour").unix(),
+    });
+    if (tokenResult.isLeft()) {
+      return reply.status(400).send({ message: "Failed to create recovery token." });
+    }
+    const token = tokenResult.value;
 
     await this.tokenService.saveToken(token);
 
@@ -48,77 +49,106 @@ export class UserController {
       },
       from: {
         name: `${process.env.MAILER_DISPLAY_NAME}`,
-        email: `${process.env.MAILER_USERNAME}`
+        email: `${process.env.MAILER_USERNAME}`,
       },
-      subject: 'Recuperação de Senha',
-      body: RecoveryMailTemplate(account.name, token.id)
-    })
+      subject: "Recuperação de Senha",
+      body: RecoveryMailTemplate(account.name, token.id),
+    });
 
     return reply.status(200).send();
   }
 
-  async RecoveryUser(req: FastifyRequest<{ Body: { password: string }, Params: { tokenId: string } }>, reply: FastifyReply) {
+  async RecoveryUser(
+    req: FastifyRequest<{ Body: { password: string }; Params: { tokenId: string } }>,
+    reply: FastifyReply
+  ) {
     const { password } = req.body;
     const { tokenId } = req.params;
 
-    const token = await this.tokenService.getTokenById(tokenId);
+    const tokenResult = await this.tokenService.getTokenById(tokenId);
+    if (tokenResult.isLeft() || !tokenResult.value) {
+      return reply.status(400).send({ message: "Invalid token." });
+    }
+    const token = tokenResult.value;
 
-    if (!token || token.type !== 'recovery') {
-      return reply.status(400).send({ message: 'Invalid token.' });
+    if (token.type !== "recovery") {
+      return reply.status(400).send({ message: "Invalid token." });
     }
 
     if (token.used) {
-      return reply.status(400).send({ message: 'This recovery link has already been used. Please request a new password recovery.' });
+      return reply.status(400).send({ message: "This recovery link has already been used. Please request a new password recovery." });
     }
 
     const isExpired = dayjs().isAfter(dayjs.unix(token.expiresIn));
     if (isExpired) {
-      return reply.status(400).send({ message: 'Recovery link has expired. Please request a new password recovery' });
+      return reply.status(400).send({ message: "Recovery link has expired. Please request a new password recovery." });
     }
 
-    const account = await this.userService.findOne(token.user_id);
-    if (!account) {
-      return reply.status(400).send({ message: 'Invalid token.' });
+    const accountResult = await this.userService.findOne(token.user_id);
+    if (accountResult.isLeft()) {
+      return reply.status(400).send({ message: "Invalid token." });
     }
+    const account = accountResult.value;
 
     if (!password || password.trim().length < 6) {
-      return reply.status(400).send({ message: 'Password is required.' });
+      return reply.status(400).send({ message: "Password is required and must be at least 6 characters." });
     }
 
     const hashedPassword = await hashPassword(password);
 
     token.used = true;
     await this.tokenService.saveToken(token);
-    const updateData: UserUpdate = {
-      password: hashedPassword
-    };
-    await this.userService.save(account.id, updateData);
 
-    return reply.status(200).send({ message: 'Password updated successfully.' });
+    const updateData: UserUpdate = { password: hashedPassword };
+    const updateResult = await this.userService.save(account.id, updateData);
+    if (updateResult.isLeft()) {
+      return reply.status(400).send({ message: "Failed to update password." });
+    }
+
+    return reply.status(200).send({ message: "Password updated successfully." });
   }
 
   async findAll(req: FastifyRequest, reply: FastifyReply) {
-    const users = await this.userService.findAll();
-    return reply.status(200).send(users);
+    const usersResult = await this.userService.findAll();
+
+    if (usersResult.isLeft()) {
+      return reply.status(400).send({ message: "Failed to fetch users." });
+    }
+
+    return reply.status(200).send(usersResult.value);
   }
 
   async findOne(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = req.params;
-    const user = await this.userService.findOne(id);
-    return reply.status(200).send(user);
+
+    const userResult = await this.userService.findOne(id);
+    if (userResult.isLeft()) {
+      return reply.status(400).send({ message: "User not found." });
+    }
+
+    return reply.status(200).send(userResult.value);
   }
 
   async delete(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = req.params;
-    const user = await this.userService.delete(id);
-    return reply.status(200).send(user);
+
+    const deleteResult = await this.userService.delete(id);
+    if (deleteResult.isLeft()) {
+      return reply.status(400).send({ message: "User not found." });
+    }
+
+    return reply.status(200).send(deleteResult.value);
   }
 
   async update(req: FastifyRequest<{ Params: { id: string }; Body: UserUpdate }>, reply: FastifyReply) {
     const { id } = req.params;
     const updatedData = req.body;
-    const updatedUser = await this.userService.save(id, updatedData);
-    return reply.status(200).send(updatedUser);
+
+    const updateResult = await this.userService.save(id, updatedData);
+    if (updateResult.isLeft()) {
+      return reply.status(400).send({ message: "Failed to update user." });
+    }
+
+    return reply.status(200).send(updateResult.value);
   }
 }
-
