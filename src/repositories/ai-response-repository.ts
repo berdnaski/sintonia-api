@@ -9,7 +9,6 @@ export class PrismaAIResponseRepository implements IAIResponseRepository {
         coupleId: data.coupleId,
         summary: data.summary,
         advice: data.advice,
-        challenge: data.challenge,
       },
     });
   }
@@ -32,7 +31,6 @@ export class PrismaAIResponseRepository implements IAIResponseRepository {
         coupleId: ai.coupleId,
         summary: ai.summary,
         advice: ai.advice,
-        challenge: ai.challenge,
         createdAt: ai.createdAt
       }
     }) as unknown as AIResponse[];

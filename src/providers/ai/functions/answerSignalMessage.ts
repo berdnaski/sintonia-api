@@ -12,45 +12,86 @@ interface AnswerSignalMessageParams {
 export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMessageParams) {
   const signalRepository = new PrismaSignalRepository()
   const aiResponseRepository = new PrismaAIResponseRepository()
-
-  const answer = await generateText({
-    model: deepseek,
-    prompt: message,
-    maxTokens: 5,
-    temperature: 0.7,
-    tools: {
-      signalsFromDatabase: tool({
-        description: `
-        Realiza uma query no banco Postgres para buscar informações da tabela "signals" do banco de dados.
-
-        Só pode realizar operações de busca (SELECT), não é permitido a geração de qualquer outra operação.
-        `.trim(),
-        parameters: z.object({}),
-        execute: async () => {
-          const result = signalRepository.findByCoupleId(coupleId)
-          return JSON.stringify(result)
+  
+  console.log("Recebido: ", { message, coupleId })
+  
+  try {
+    const signals = await signalRepository.findByCoupleId(coupleId)
+    const previousResponses = await aiResponseRepository.findByCoupleId(coupleId)
+    
+    const answer = await generateText({
+      model: deepseek,
+      prompt: `Como um especialista em relacionamentos, analice o seguinte sinal:
+      Sinal Atual:
+      ${message}
+      Com base nessas informações, forneça uma análise estruturada em português, no seguinte formato JSON:
+      {
+        "summary": "Análise detalhada da situação atual do casal",
+        "advice": "Recomendações práticas e específicas para melhorar o relacionamento"
+      }
+      IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`,
+      maxTokens: 2000,
+      temperature: 0.5,
+      tools: {}, 
+      system: `Você é um especialista em relacionamentos com vasta experiência.
+        Analise cuidadosamente o sinal e o histórico do casal.
+        Forneça insights profundos e conselhos práticos.
+        SEMPRE responda em português.
+        SEMPRE use o formato JSON especificado.
+        Mantenha o foco em ajudar o casal de forma construtiva. Com no máximo 500 tokens`
+    })
+    
+    console.log("Raw AI Response:", answer)
+    console.log("Response Text:", answer?.text)
+    
+    if (!answer?.text) {
+      return {
+        response: {
+          coupleId,
+          summary: "O modelo está temporariamente indisponível",
+          advice: "Por favor, tente novamente em alguns minutos"
         }
-      }),
-      aiResponsesFromDatabase: tool({
-        description: `
-        Realiza uma query no banco Postgres para buscar informações da tabela "ai_responses" do banco de dados.
-        
-        Só pode realizar operações de busca (SELECT), não é permitido a geração de qualquer outra operação.
-        `,
-        parameters: z.object({}),
-        execute: async () => {
-          const result = aiResponseRepository.findByCoupleId(coupleId)
-          return JSON.stringify(result)
+      }
+    }
+    
+    try {
+      const parsedResponse = JSON.parse(answer.text.trim())
+      
+      if (!parsedResponse.summary || !parsedResponse.advice) {
+        return {
+          response: {
+            coupleId,
+            summary: "A resposta do modelo estava incompleta",
+            advice: "Por favor, tente novamente"
+          }
         }
-      }),
-    },
-    system: `Você é um assistente de IA especializado em análise de relacionamentos.
-      Com base nos seguintes dados do casal (micro sinais e respostas anteriores),
-      forneça um resumo atualizado do estado do relacionamento, conselhos para melhoria e,
-      opcionalmente, um desafio para o casal.
-
-      Responda em JSON com os campos "summary", "advice" e "challenge" (opcional).`
-  })
-
-  return { response: answer.text }
+      }
+    
+      return {
+        response: {
+          coupleId,
+          summary: parsedResponse.summary,
+          advice: parsedResponse.advice
+        }
+      }
+    } catch (e) {
+      console.error("JSON Parse Error:", e)
+      return {
+        response: {
+          coupleId,
+          summary: "Erro ao processar a resposta do modelo",
+          advice: "Por favor, tente novamente em alguns instantes"
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Erro na execução do modelo AI:", error)
+    return {
+      response: {
+        coupleId,
+        summary: "Falha ao gerar análise do relacionamento",
+        advice: "Ocorreu um erro inesperado, tente novamente mais tarde"
+      }
+    }
+  }
 }

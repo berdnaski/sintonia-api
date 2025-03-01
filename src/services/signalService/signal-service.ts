@@ -31,8 +31,10 @@ export class SignalService {
     const message = `Emotion: ${emotion}, Note: ${note}`
     const answer = await AnswerSignalMessage({ message, coupleId })
 
-    const parsedAnswer = JSON.parse(answer.response)
-    const result = await this.IAIResponseRepository.create(parsedAnswer)
+    const result = await this.IAIResponseRepository.create({
+      ...answer.response,
+      coupleId
+    })
 
     return right(result);
   }
