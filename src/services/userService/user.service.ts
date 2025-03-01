@@ -22,7 +22,6 @@ class UserService {
 
   async findAll(): Promise<findAllResponse> {
     const users = await this.userRepository.findAll();
-    console.log(users)
 
     return right(users)
   }

@@ -1,7 +1,6 @@
 import { FastifyInstance, FastifyRequest, type FastifyReply } from "fastify";
+import { CreateSignal, type ICreateSignal, type ISignalUpdate } from "../interfaces/signal.interface";
 import { SignalService } from "../services/signalService/signal-service";
-import type { ICreateSignal, ISignal, ISignalUpdate } from "../interfaces/signal.interface";
-import type { Signal } from "@prisma/client";
 
 export class SignalController {
   private signalService: SignalService;
@@ -13,14 +12,23 @@ export class SignalController {
   async create(req: FastifyRequest<{ Body: ICreateSignal }>, reply: FastifyReply) {
     const { userId, coupleId, emotion, note } = req.body;
 
-    const result = await this.signalService.create({ userId, coupleId, emotion, note });
+    const validateBody = CreateSignal.safeParse({ userId, coupleId, emotion, note });
+    if (!validateBody.success) {
+      const errors = validateBody.error.flatten().fieldErrors
+      return reply.status(400).send({
+        message: 'Invalid data.',
+        errors,
+      });
+    }
+
+    const result = await this.signalService.generateAnalysis(userId, coupleId, emotion, note);
 
     if (result.isLeft()) {
       const error = result.value;
       return reply.status(400).send({ message: error.message });
-    } else {
-      return reply.status(201).send(result.value);
     }
+
+    return reply.status(201).send(result.value);
   }
 
   async save(req: FastifyRequest<{ Params: { id: string }; Body: ISignalUpdate }>, reply: FastifyReply) {
@@ -37,7 +45,7 @@ export class SignalController {
     }
   }
 
-  async findOne(req: FastifyRequest<{ Params: { ident: string } }>, reply: FastifyReply ) {
+  async findOne(req: FastifyRequest<{ Params: { ident: string } }>, reply: FastifyReply) {
     const { ident } = req.params;
 
     const signalResult = await this.signalService.findOne(ident);

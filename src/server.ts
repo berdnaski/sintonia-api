@@ -7,6 +7,7 @@ import { errorHandler } from './middlewares/error-handler';
 import { authRoutes } from './routes/authRoutes';
 import { userRoutes } from './routes/userRoutes';
 import { coupleRoutes } from './routes/coupleRoutes';
+import { signalRoutes } from './routes/signalRoutes';
 
 const app: FastifyInstance = fastify();
 
@@ -23,6 +24,7 @@ app.register(fastifyFormbody)
 app.register(authRoutes, { prefix: 'auth' });
 app.register(userRoutes);
 app.register(coupleRoutes);
+app.register(signalRoutes);
 
 const PORT = Number(process.env.PORT) || 3000
 app.listen({ port: PORT }, () => console.log(`listening on port ${PORT}`))

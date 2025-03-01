@@ -1,11 +1,15 @@
+import type { AIResponse, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
-import type { ICreateSignal, ISignal, ISignalRepository, ISignalUpdate } from "../../interfaces/signal.interface";
-import { PrismaSignalRepository } from "../../repositories/signal-repository";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
-import type { Signal } from "@prisma/client";
+import { IAIResponseRepository } from "../../interfaces/ai-response.interface";
+import type { ISignalRepository, ISignalUpdate } from "../../interfaces/signal.interface";
+import { AnswerSignalMessage } from "../../providers/ai/functions/answerSignalMessage";
+import { PrismaAIResponseRepository } from "../../repositories/ai-response-repository";
+import { PrismaSignalRepository } from "../../repositories/signal-repository";
 
-type createSignalResponse = Either<RequiredParametersError, Signal>;
+type generateAnalysisResponse = Either<RequiredParametersError, AIResponse>
+type getAnalysisHistoryResponse = Either<RequiredParametersError, AIResponse[]>
 type saveSignalResponse = Either<RequiredParametersError, Signal>;
 type getSignalByIdResponse = Either<RequiredParametersError, Signal>;
 type getAllSignalResponse = Either<RequiredParametersError, Signal[]>;
@@ -14,34 +18,42 @@ type removeSignalResponse = Either<RequiredParametersError, Signal>;
 
 export class SignalService {
   private signalRepository: ISignalRepository;
+  private IAIResponseRepository: IAIResponseRepository
 
   constructor(fastify: FastifyInstance) {
     this.signalRepository = new PrismaSignalRepository();
+    this.IAIResponseRepository = new PrismaAIResponseRepository()
   }
 
-  async create(signal: ICreateSignal): Promise<createSignalResponse> {
-    const result = await this.signalRepository.create({
-      userId: signal.userId,
-      coupleId: signal.coupleId,
-      emotion: signal.emotion,
-      note: signal.note,
-    });
-  
+  async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {    
+    await this.signalRepository.create({ userId, coupleId, emotion, note })
+    
+    const message = `Emotion: ${emotion}, Note: ${note}`
+    const answer = await AnswerSignalMessage({ message, coupleId })
+
+    const parsedAnswer = JSON.parse(answer.response)
+    const result = await this.IAIResponseRepository.create(parsedAnswer)
+
     return right(result);
+  }
+
+  async getAnalysisHistory(coupleId: string): Promise<getAnalysisHistoryResponse> {
+    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId)
+    return right(answer)
   }
 
   async save(id: string, updateData: ISignalUpdate): Promise<saveSignalResponse> {
     const signal = await this.signalRepository.findOne(id);
-  
+
     if (!signal) {
       return left(new RequiredParametersError('Signal not found'));
     }
-  
+
     const updatedSignal = await this.signalRepository.save(id, updateData);
-  
+
     return right(updatedSignal);
   }
-  
+
   async findOne(ident: string): Promise<getSignalByIdResponse> {
     const result = await this.signalRepository.findOne(ident);
 

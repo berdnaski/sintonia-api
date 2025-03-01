@@ -1,6 +1,6 @@
 import type { Signal } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
-import type { ICreateSignal, ISignal, ISignalRepository, ISignalUpdate } from "../interfaces/signal.interface";
+import type { ICreateSignal, ISignalRepository, ISignalUpdate } from "../interfaces/signal.interface";
 
 export class PrismaSignalRepository implements ISignalRepository {
   async create(signal: ICreateSignal): Promise<Signal> {
@@ -48,8 +48,17 @@ export class PrismaSignalRepository implements ISignalRepository {
     return query as Signal;
   }
 
+  async findByCoupleId(coupleId: string): Promise<Signal[]> {
+    return prisma.signal.findMany({
+      where: { coupleId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
   async findAll(): Promise<Signal[]> {
-    const query = await prisma.signal.findMany();
+    const query = await prisma.signal.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
 
     return query.map((signal) => {
       return {

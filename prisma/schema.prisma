@@ -86,7 +86,7 @@ model AIResponse {
   coupleId  String
   summary   String
   advice    String
-  // challenge String
+  challenge String?
   createdAt DateTime @default(now())
   couple    Couple   @relation(fields: [coupleId], references: [id])
 
