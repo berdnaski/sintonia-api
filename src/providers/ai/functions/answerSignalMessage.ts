@@ -5,111 +5,153 @@ import { PrismaAIResponseRepository } from "../../../repositories/ai-response-re
 import { PrismaSignalRepository } from "../../../repositories/signal-repository";
 
 interface AnswerSignalMessageParams {
-  message: string,
-  coupleId: string,
+  message: string;
+  coupleId: string;
 }
 
+const tools = {
+  signalsFromDatabase: tool({
+    description: `
+        Realiza uma query no banco Postgres para buscar informações da tabela "signals" do banco de dados.
+        Só pode realizar operações de busca (SELECT), não é permitido a geração de qualquer outra operação.
+    `.trim(),
+    parameters: z.object({
+      coupleId: z.string()
+    }),
+    execute: async ({ coupleId }) => {
+      const signalRepository = new PrismaSignalRepository();
+      try {
+        const signals = await signalRepository.findByCoupleId(coupleId);
+        return JSON.stringify(signals);
+      } catch (error) {
+        console.error("Erro ao buscar sinais:", error);
+        throw new Error("Erro ao buscar sinais do banco de dados");
+      }
+    }
+  }),
+
+  aiResponsesFromDatabase: tool({
+    description: `
+      Realiza uma query no banco Postgres para buscar informações da tabela "ai_responses" do banco de dados.
+      Só pode realizar operações de busca (SELECT), não é permitido a geração de qualquer outra operação.
+    `.trim(),
+    parameters: z.object({
+      coupleId: z.string()
+    }),
+    execute: async ({ coupleId }) => {
+      const aiResponseRepository = new PrismaAIResponseRepository();
+      try {
+        const responses = await aiResponseRepository.findByCoupleId(coupleId);
+        return JSON.stringify(responses);
+      } catch (error) {
+        console.error("Erro ao buscar respostas de IA:", error);
+        throw new Error("Erro ao buscar respostas de IA do banco de dados");
+      }
+    }
+  }),
+};
+
 export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMessageParams) {
-  const signalRepository = new PrismaSignalRepository();
-  const aiResponseRepository = new PrismaAIResponseRepository();
-
   try {
-    const signals = await signalRepository.findByCoupleId(coupleId);
-    const previousResponses = await aiResponseRepository.findByCoupleId(coupleId);
+    const signalsResult = await tools.signalsFromDatabase.execute(
+      { coupleId },
+      { toolCallId: "signals-query", messages: [] }
+    );
 
-    const formattedSignals = signals.map(s => ({
-      emotion: s.emotion,
-      note: s.note,
-      date: s.createdAt
-    }));
+    const previousResponsesResult = await tools.aiResponsesFromDatabase.execute(
+      { coupleId },
+      { toolCallId: "responses-query", messages: [] }
+    );
+
+    const signals = JSON.parse(signalsResult);
+    const previousResponses = JSON.parse(previousResponsesResult);
 
     const answer = await generateText({
       model: deepseek,
-      prompt: `Analise este novo sinal de relacionamento e o histórico do casal:
-
-      SINAL ATUAL:
-      Emoção: ${message.split(',')[0].replace('Emotion:', '').trim()}
-      Nota: ${message.split(',')[1].replace('Note:', '').trim()}
-
-      HISTÓRICO DE SINAIS:
-      ${JSON.stringify(formattedSignals, null, 2)}
-
-      INSTRUÇÕES:
-      1. Analise o sinal atual em conjunto com o histórico
-      2. Forneça uma análise detalhada da situação
-      3. Sugira ações práticas para melhorar o relacionamento
-
-      RESPONDA APENAS NO SEGUINTE FORMATO JSON:
-      {
-        "summary": "Análise detalhada da situação atual",
-        "advice": "Um conselho que gere impacto e transformação no relacionamento"
-      }`,
+      prompt: `Analise este relacionamento e forneça uma resposta curta:
+      ${message}
+      RESPONDA EXATAMENTE NESTE FORMATO, sem quebras de linha:
+      {"summary":"[máximo 500 caracteres]","advice":"[máximo 500 caracteres]"}`,
       maxTokens: 100,
-      temperature: 0.7,
-      system: `Você é um assistente de IA especializado em análise de relacionamentos.
-      Com base nos seguintes dados do casal (micro sinais e respostas anteriores),
-      forneça um resumo atualizado do estado do relacionamento, conselhos para melhoria e,
-      opcionalmente, um desafio para o casal.
-        SEMPRE responda em português.
-        SEMPRE mantenha o formato JSON especificado.
-        NÃO inclua texto fora do formato JSON.
-        Não pode ser respostas grandes, de preferencia gastando no maximo 100 tokens.`
+      temperature: 0.3,
+      system: `Você é um terapeuta especializado em relacionamentos.
+        REGRAS IMPORTANTES:
+        - Responda APENAS em formato JSON válido
+        - Use SOMENTE os campos "summary" e "advice"
+        - Mantenha cada resposta com no máximo 80 caracteres
+        - NÃO use quebras de linha no JSON
+        - NÃO use caracteres especiais
+        - NÃO inclua texto fora do JSON
+        - SEMPRE feche todas as aspas e chaves corretamente
+        - SEMPRE mantenha as respostas curtas e diretas`
     });
 
-    console.log("Resposta do modelo:", answer);
-
-    if (!answer?.text || answer.text.trim() === '') {
-      console.error("Modelo retornou resposta vazia ou inválida.");
+    if (!answer?.text) {
       return {
         response: {
           coupleId,
-          summary: "O modelo está temporariamente indisponível",
-          advice: "Por favor, tente novamente em alguns minutos",
+          summary: "Modelo indisponível",
+          advice: "Tente novamente em alguns minutos",
           challenge: null
         }
       };
     }
 
     try {
-      const parsedResponse = JSON.parse(answer.text.trim());
-      if (!parsedResponse.summary || !parsedResponse.advice) {
-        console.error("Resposta do modelo incompleta:", parsedResponse);
-        return {
-          response: {
-            coupleId,
-            summary: "A resposta do modelo estava incompleta",
-            advice: "Por favor, tente novamente"
-          }
-        };
+      let cleanText = answer.text
+        .trim()
+        .replace(/\n/g, ' ')
+        .replace(/\r/g, '')
+        .replace(/\t/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .replace(/\\n/g, ' ')
+        .replace(/\\\"/g, '"')
+        .replace(/^[^{]*{/, '{')
+        .replace(/}[^}]*$/, '}');
+      if (!cleanText.includes('"summary"')) {
+        throw new Error('Invalid JSON structure');
       }
+
+      const summaryMatch = cleanText.match(/"summary"\s*:\s*"([^"]+)"/);
+      const adviceMatch = cleanText.match(/"advice"\s*:\s*"([^"]+)"/);
+
+      if (!summaryMatch || !adviceMatch) {
+        throw new Error('Missing required fields');
+      }
+
+      const fixedResponse = {
+        summary: summaryMatch[1].substring(0, 80),
+        advice: adviceMatch[1].substring(0, 80)
+      };
 
       return {
         response: {
           coupleId,
-          summary: parsedResponse.summary,
-          advice: parsedResponse.advice,
-          challenge: parsedResponse.challenge || null
+          ...fixedResponse,
+          challenge: null
         }
       };
     } catch (e) {
-      console.error("Erro ao processar a resposta do modelo:", e);
+      console.error("Erro ao parsear JSON:", e, "Resposta:", answer.text);
       return {
         response: {
           coupleId,
-          summary: "Erro ao processar a resposta do modelo",
-          advice: "Por favor, tente novamente em alguns instantes",
+          summary: `Erro de processamento: ${e.message}`,
+          advice: `Erro ao processar JSON: ${answer.text}`,
           challenge: null
         }
       };
     }
 
   } catch (error) {
-    console.error("Erro na execução do modelo AI:", error);
+    console.error("Erro na análise:", error);
     return {
       response: {
         coupleId,
-        summary: "Falha ao gerar análise do relacionamento",
-        advice: "Ocorreu um erro inesperado, tente novamente mais tarde",
+        summary: "Erro na análise",
+        advice: "Tente novamente mais tarde",
         challenge: null
       }
     };
