@@ -1,8 +1,8 @@
-import { generateText, tool } from "ai"
-import { z } from "zod"
-import { deepseek } from ".."
-import { PrismaAIResponseRepository } from "../../../repositories/ai-response-repository"
-import { PrismaSignalRepository } from "../../../repositories/signal-repository"
+import { generateText, tool } from "ai";
+import { z } from "zod";
+import { deepseek } from "..";
+import { PrismaAIResponseRepository } from "../../../repositories/ai-response-repository";
+import { PrismaSignalRepository } from "../../../repositories/signal-repository";
 
 interface AnswerSignalMessageParams {
   message: string,
@@ -10,88 +10,108 @@ interface AnswerSignalMessageParams {
 }
 
 export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMessageParams) {
-  const signalRepository = new PrismaSignalRepository()
-  const aiResponseRepository = new PrismaAIResponseRepository()
-  
-  console.log("Recebido: ", { message, coupleId })
-  
+  const signalRepository = new PrismaSignalRepository();
+  const aiResponseRepository = new PrismaAIResponseRepository();
+
   try {
-    const signals = await signalRepository.findByCoupleId(coupleId)
-    const previousResponses = await aiResponseRepository.findByCoupleId(coupleId)
-    
+    const signals = await signalRepository.findByCoupleId(coupleId);
+    const previousResponses = await aiResponseRepository.findByCoupleId(coupleId);
+
+    const formattedSignals = signals.map(s => ({
+      emotion: s.emotion,
+      note: s.note,
+      date: s.createdAt
+    }));
+
     const answer = await generateText({
       model: deepseek,
-      prompt: `Como um especialista em relacionamentos, analice o seguinte sinal:
-      Sinal Atual:
-      ${message}
-      Com base nessas informações, forneça uma análise estruturada em português, no seguinte formato JSON:
+      prompt: `Analise este novo sinal de relacionamento e o histórico do casal:
+
+      SINAL ATUAL:
+      Emoção: ${message.split(',')[0].replace('Emotion:', '').trim()}
+      Nota: ${message.split(',')[1].replace('Note:', '').trim()}
+
+      HISTÓRICO DE SINAIS:
+      ${JSON.stringify(formattedSignals, null, 2)}
+
+      INSTRUÇÕES:
+      1. Analise o sinal atual em conjunto com o histórico
+      2. Forneça uma análise detalhada da situação
+      3. Sugira ações práticas para melhorar o relacionamento
+
+      RESPONDA APENAS NO SEGUINTE FORMATO JSON:
       {
-        "summary": "Análise detalhada da situação atual do casal",
-        "advice": "Recomendações práticas e específicas para melhorar o relacionamento"
-      }
-      IMPORTANTE: Responda APENAS com o JSON, sem texto adicional.`,
-      maxTokens: 2000,
-      temperature: 0.5,
-      tools: {}, 
-      system: `Você é um especialista em relacionamentos com vasta experiência.
-        Analise cuidadosamente o sinal e o histórico do casal.
-        Forneça insights profundos e conselhos práticos.
+        "summary": "Análise detalhada da situação atual",
+        "advice": "Um conselho que gere impacto e transformação no relacionamento"
+      }`,
+      maxTokens: 100,
+      temperature: 0.7,
+      system: `Você é um assistente de IA especializado em análise de relacionamentos.
+      Com base nos seguintes dados do casal (micro sinais e respostas anteriores),
+      forneça um resumo atualizado do estado do relacionamento, conselhos para melhoria e,
+      opcionalmente, um desafio para o casal.
         SEMPRE responda em português.
-        SEMPRE use o formato JSON especificado.
-        Mantenha o foco em ajudar o casal de forma construtiva. Com no máximo 500 tokens`
-    })
-    
-    console.log("Raw AI Response:", answer)
-    console.log("Response Text:", answer?.text)
-    
-    if (!answer?.text) {
+        SEMPRE mantenha o formato JSON especificado.
+        NÃO inclua texto fora do formato JSON.
+        Não pode ser respostas grandes, de preferencia gastando no maximo 100 tokens.`
+    });
+
+    console.log("Resposta do modelo:", answer);
+
+    if (!answer?.text || answer.text.trim() === '') {
+      console.error("Modelo retornou resposta vazia ou inválida.");
       return {
         response: {
           coupleId,
           summary: "O modelo está temporariamente indisponível",
-          advice: "Por favor, tente novamente em alguns minutos"
+          advice: "Por favor, tente novamente em alguns minutos",
+          challenge: null
         }
-      }
+      };
     }
-    
+
     try {
-      const parsedResponse = JSON.parse(answer.text.trim())
-      
+      const parsedResponse = JSON.parse(answer.text.trim());
       if (!parsedResponse.summary || !parsedResponse.advice) {
+        console.error("Resposta do modelo incompleta:", parsedResponse);
         return {
           response: {
             coupleId,
             summary: "A resposta do modelo estava incompleta",
             advice: "Por favor, tente novamente"
           }
-        }
+        };
       }
-    
+
       return {
         response: {
           coupleId,
           summary: parsedResponse.summary,
-          advice: parsedResponse.advice
+          advice: parsedResponse.advice,
+          challenge: parsedResponse.challenge || null
         }
-      }
+      };
     } catch (e) {
-      console.error("JSON Parse Error:", e)
+      console.error("Erro ao processar a resposta do modelo:", e);
       return {
         response: {
           coupleId,
           summary: "Erro ao processar a resposta do modelo",
-          advice: "Por favor, tente novamente em alguns instantes"
+          advice: "Por favor, tente novamente em alguns instantes",
+          challenge: null
         }
-      }
+      };
     }
+
   } catch (error) {
-    console.error("Erro na execução do modelo AI:", error)
+    console.error("Erro na execução do modelo AI:", error);
     return {
       response: {
         coupleId,
         summary: "Falha ao gerar análise do relacionamento",
-        advice: "Ocorreu um erro inesperado, tente novamente mais tarde"
+        advice: "Ocorreu um erro inesperado, tente novamente mais tarde",
+        challenge: null
       }
-    }
+    };
   }
 }
