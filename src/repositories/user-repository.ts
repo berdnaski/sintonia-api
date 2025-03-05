@@ -9,6 +9,7 @@ export class PrismaUserRepository implements IUserRepository {
         name: user.name,
         email: user.email,
         password: user.password,
+        stripeCustomerId: user.stripeCustomerId,
       },
       include: {
         subscriptions: true,

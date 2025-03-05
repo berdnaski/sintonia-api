@@ -10,13 +10,15 @@ export interface IUser {
   subscriptionStatus?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  stripeCustomerId?: string; 
 }
 
 export const CreateUser = z.object({
-  name: z.string().min(3, 'Name must have at least 3 characters').max(20, 'name not have more than 20 characters.'),
+  name: z.string().min(3, 'Name must have at least 3 characters').max(20, 'Name should not exceed 20 characters'),
   email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must have at least 6 characters').max(255, 'Password not have more than 255 characters.'),
-})
+  password: z.string().min(6, 'Password must have at least 6 characters').max(255, 'Password should not exceed 255 characters'),
+  stripeCustomerId: z.string().optional(), 
+});
 export type CreateUser = z.infer<typeof CreateUser>;
 
 export interface UserResponse {
@@ -25,8 +27,8 @@ export interface UserResponse {
 
 export const UserLogin = z.object({
   email: z.string().email('Invalid email'),
-  password: z.string().min(6, 'Password must have at least 6 characters').max(255, 'Password not have more than 255 characters.'),
-})
+  password: z.string().min(6, 'Password must have at least 6 characters').max(255, 'Password should not exceed 255 characters'),
+});
 export type UserLogin = z.infer<typeof UserLogin>;
 
 export interface UserUpdate {
@@ -39,8 +41,8 @@ export interface UserUpdate {
 export interface IUserRepository {
   create(user: CreateUser): Promise<User | null>;
   exists(ident: string): Promise<boolean>;
-  save(id: string, updateData: UserUpdate): Promise<User>
+  save(id: string, updateData: UserUpdate): Promise<User>;
   findOne(ident: string): Promise<User>;
   findAll(): Promise<User[]>;
-  delete(id: string): Promise<User>
+  delete(id: string): Promise<User>;
 }

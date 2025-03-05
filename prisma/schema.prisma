@@ -31,6 +31,9 @@ model User {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
   subscriptionStatus StatusPlan     @default(NoPlan)
+  stripeCustomerId String?
+  stripeSubscriptionStatus String?
+  stripeSubscriptionId String?
   signals            Signal[]       @relation
   subscriptions      Subscription[] @relation
   coupleAsUser1      Couple?        @relation("CoupleUser1")
@@ -96,7 +99,6 @@ model AIResponse {
 model Subscription {
   id                   String     @id @default(uuid())
   userId               String
-  stripeSubscriptionId String
   status               StatusPlan @default(NoPlan)
   planType             PlanType   @default(None)
   expiresIn            DateTime

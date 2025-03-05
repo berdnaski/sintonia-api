@@ -5,6 +5,7 @@ import { RequiredParametersError } from "../../errors/required-parameters.error"
 import { CreateUser, IUserRepository, UserLogin } from "../../interfaces/user.interface";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 import { hashPassword, verifyPassword } from "../../utils/hash";
+import { createStripeCustomer } from "../../utils/stripe";
 
 type UserResponse = {
   user: User | null;
@@ -32,19 +33,27 @@ class AuthService {
 
     const hashedPassword = await hashPassword(data.password);
 
+    const customer = await createStripeCustomer({
+      email: data.email,
+      name: data.name,
+    });
+
+    console.log(customer);
+
     const user = await this.userRepository.create({
       ...data,
       name: data.name,
       email: data.email,
       password: hashedPassword,
-    })
-
+      stripeCustomerId: customer.id // Passando o stripeCustomerId
+    });
+    
     const token = this.fastify.jwt.sign({
       id: user?.id,
       email: user?.email,
     });
 
-    return right({ user, token });
+    return right({ user, token, customer });
   }
 
   async login(data: UserLogin): Promise<loginResponse> {
