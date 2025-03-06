@@ -154,7 +154,7 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
           ...fixedResponse
         }
       };
-    } catch (e) {
+    } catch (e: any) {
       console.error("Erro ao parsear JSON:", e, "Resposta:", answer.text);
       return {
         response: {
