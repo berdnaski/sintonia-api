@@ -31,6 +31,38 @@ export class AuthController {
     }
   }
 
+  async registerWithInvite(
+    req: FastifyRequest<{ Body: CreateUser, Params: { inviteToken: string } }>,
+    reply: FastifyReply
+  ) {
+    const { name, email, password } = req.body;
+    const { inviteToken } = req.params;
+
+    const validateBody = CreateUser.safeParse({ name, email, password });
+    if (!validateBody.success) {
+      const errors = validateBody.error.flatten().fieldErrors;
+      return reply.status(400).send({
+        message: "Invalid data.",
+        errors,
+      });
+    }
+
+    const result = await this.authService.registerWithInvite({
+      name,
+      email,
+      password,
+      inviteToken,
+    });
+
+    if (result.isLeft()) {
+      const error = result.value;
+      return reply.status(400).send({ message: error.message });
+    } else {
+      const { user, token, couple } = result.value;
+      reply.status(201).send({ user, token, couple });
+    }
+  }
+
   async login(req: FastifyRequest<{ Body: UserLogin }>, reply: FastifyReply) {
     const { email, password } = req.body;
 

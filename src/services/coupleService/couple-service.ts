@@ -2,6 +2,8 @@ import { Couple } from "@prisma/client";
 import dayjs from "dayjs";
 import { FastifyInstance } from "fastify";
 import { v4 as uuidv4 } from "uuid";
+import { sintoniaConfig } from "../../config/api";
+import { AuthController } from "../../controllers/auth-controller";
 import { Either, left, right } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
 import { ICoupleInviteRepository } from "../../interfaces/couple-invite.interface";
@@ -13,7 +15,15 @@ import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites
 import { PrismaCoupleRepository } from "../../repositories/couple-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 
-type InviteResponse = Either<RequiredParametersError, Couple>;
+type PendingCouple = {
+  id: string;
+  relationshipStatus: "pending";
+  user1Id: string;
+  user2Id: string | null;
+  createdAt: Date;
+};
+
+type InviteResponse = Either<RequiredParametersError, PendingCouple>;
 type CancelInviteResponse = Either<RequiredParametersError, string>;
 type AcceptInviteResponse = Either<RequiredParametersError, Couple>;
 type DeleteCoupleResponse = Either<RequiredParametersError, string>;
@@ -25,18 +35,20 @@ export class CoupleService {
   private coupleInviteRepository: ICoupleInviteRepository;
   private userRepository: IUserRepository;
   private mailProvider: MailProvider;
+  private authController: AuthController
 
   constructor(fastify: FastifyInstance) {
     this.coupleRepository = new PrismaCoupleRepository();
     this.coupleInviteRepository = new PrismaCoupleInvitesRepository();
     this.userRepository = new PrismaUserRepository();
     this.mailProvider = new MailProvider();
+    this.authController = new AuthController(fastify);
   }
 
   async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
     const inviter = await this.userRepository.findOne(inviterId);
     if (!inviter) {
-      return left(new RequiredParametersError("User who sent the invitation was not found.", 400))
+      return left(new RequiredParametersError("User who sent the invitation was not found.", 400));
     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
@@ -45,18 +57,17 @@ export class CoupleService {
     }
 
     const invitee = await this.userRepository.findOne(inviteeEmail);
-    if (!invitee) {
-      return left(new RequiredParametersError("Guest user not found.", 400))
-    }
-
-    const inviteeCouple = await this.coupleRepository.findCoupleByUserId(invitee.id);
+    let inviteeName = "amado(a)"; // default name if user not exists
+    let url = "";
+    
+    const inviteeCouple = invitee ? await this.coupleRepository.findCoupleByUserId(invitee.id) : null;
     if (inviteeCouple) {
       return left(new RequiredParametersError("The Guest is already in a relationship."));
     }
 
     const existingInvite = await this.coupleInviteRepository.findInviteByInviteeEmail(inviteeEmail);
     if (existingInvite && !existingInvite.used) {
-      return left(new RequiredParametersError("There is already a pending invitation for that email."))
+      return left(new RequiredParametersError("There is already a pending invitation for that email."));
     }
 
     const invite = await this.coupleInviteRepository.create({
@@ -69,25 +80,31 @@ export class CoupleService {
       createdAt: new Date(),
     });
 
+    if (invitee) {
+      url = `${sintoniaConfig.frontend}/couple/accept/${invite.token}`;
+    } else {
+      url = `${sintoniaConfig.frontend}/auth/register-with-invite/token/${invite.token}`;
+    }
+
     await this.mailProvider.sendMail({
       to: {
-        name: invitee.name,
-        email: inviteeEmail
+        name: inviteeName,
+        email: inviteeEmail,
       },
       from: {
         name: `${process.env.MAILER_DISPLAY_NAME}`,
-        email: `${process.env.MAILER_USERNAME}`
+        email: `${process.env.MAILER_USERNAME}`,
       },
       subject: "Convite para formar um casal",
-      body: InviteToCoupleMailTemplate(inviter.name, invitee.name, invite.token),
+      body: InviteToCoupleMailTemplate(inviter.name, inviteeName, url),
     });
 
     return right({
       id: invite.id,
-      relationshipStatus: 'pending',
+      relationshipStatus: "pending",
       user1Id: inviterId,
-      user2Id: invitee.id,
-      createdAt: invite.createdAt || new Date()
+      user2Id: invitee ? invitee.id : null,
+      createdAt: invite.createdAt || new Date(),
     });
   }
 
