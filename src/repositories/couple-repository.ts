@@ -16,8 +16,25 @@ export class PrismaCoupleRepository implements ICoupleRepository {
   }
 
   async deleteCouple(id: string): Promise<void> {
-    prisma.couple.delete({ where: { id } });
+    await prisma.$transaction([
+      // Excluir os registros dependentes na tabela ai_responses
+      prisma.aIResponse.deleteMany({
+        where: { coupleId: id },
+      }),
+  
+      // Excluir os sinais relacionados
+      prisma.signal.deleteMany({
+        where: { coupleId: id },
+      }),
+  
+      // Excluir o couple
+      prisma.couple.delete({
+        where: { id },
+      }),
+    ]);
   }
+  
+
 
   async createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite> {
     return prisma.coupleInvite.create({
