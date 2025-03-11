@@ -1,10 +1,10 @@
 
 import { prisma } from "../../database/prisma-client";
-import { Either, left, right } from "../../errors/either"; 
+import { Either, left, right } from "../../errors/either";
 import { createPortalCustomer, generateCheckout } from "../../utils/stripe";
 
 export class CheckoutService {
-  async createCheckout(userId: string, userEmail: string): Promise<Either<Error, any>> {
+  async createCheckout(userId: string): Promise<Either<Error, any>> {
     try {
       const user = await prisma.user.findFirst({ where: { id: userId } });
 
@@ -21,7 +21,7 @@ export class CheckoutService {
 
   async createPortal(userId: string): Promise<Either<Error, any>> {
     try {
-      const user = await prisma.user.findFirst({ 
+      const user = await prisma.user.findFirst({
         where: { id: userId },
         select: {
           id: true,

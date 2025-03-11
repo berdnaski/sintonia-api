@@ -9,27 +9,22 @@ export class CheckoutController {
   }
 
   async createCheckout(
-    req: FastifyRequest<{ Params: { id: string }; Query: { email: string } }>, 
+    req: FastifyRequest<{ Params: { id: string }; Query: { email: string } }>,
     reply: FastifyReply
   ) {
     const { id } = req.params;
-    const { email } = req.query;  
 
-    if (!email) {
-      return reply.status(400).send({ message: "Email is required" });
-    }
-
-    const result = await this.checkoutService.createCheckout(id, email);
+    const result = await this.checkoutService.createCheckout(id);
 
     if (result.isLeft()) {
       return reply.status(400).send({ message: result.value.message });
     }
 
-    return reply.status(200).send(result.value); 
+    return reply.status(200).send(result.value);
   }
 
   async createPortal(
-    req: FastifyRequest<{ Params: { id: string } }>, 
+    req: FastifyRequest<{ Params: { id: string } }>,
     reply: FastifyReply
   ) {
     const { id } = req.params;
@@ -40,6 +35,6 @@ export class CheckoutController {
       return reply.status(400).send({ message: result.value.message });
     }
 
-    return reply.status(200).send(result.value); 
+    return reply.status(200).send(result.value);
   }
 }
