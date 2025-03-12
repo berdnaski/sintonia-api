@@ -1,11 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { SignalController } from "../controllers/signal-controller";
 import { Auth } from "../middlewares/auth";
+import { CheckSubscription } from "../middlewares/checkSubscription";
 
 export async function signalRoutes(app: FastifyInstance) {
   const signalController = new SignalController(app);
 
   app.addHook("onRequest", Auth);
+  app.addHook("onRequest", CheckSubscription);
 
   app.post<{ Body: { userId: string; coupleId: string; emotion: string; note: string | null } }>('/signals', async (req, reply) => {
     await signalController.create(req, reply);

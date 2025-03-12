@@ -35,7 +35,7 @@ export const generateCheckout = async (userId: string, email: string) => {
       mode: 'subscription',
       client_reference_id: userId,
       customer: customer.id,
-      success_url: `http://localhost:3000/done`,
+      success_url: `http://localhost:3001/dashboard`,
       cancel_url: `http://localhost:3000/cancel`,
       line_items: [
         {

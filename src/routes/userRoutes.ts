@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { UserController } from "../controllers/user-controller";
 import type { UserUpdate } from "../interfaces/user.interface";
 import { Auth } from "../middlewares/auth";
+import { CheckSubscription } from "../middlewares/checkSubscription";
 
 export async function userRoutes(app: FastifyInstance) {
   const userController = new UserController(app);
