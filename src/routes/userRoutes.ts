@@ -31,4 +31,8 @@ export async function userRoutes(app: FastifyInstance) {
   app.post<{ Params: { tokenId: string }, Body: { password: string } }>("/users/recovery/reset/:tokenId", async (req, reply) => {
     await userController.RecoveryUser(req, reply)
   })
+
+  app.post("/me", async (req, reply) => {
+    await userController.me(req, reply);
+  });
 }

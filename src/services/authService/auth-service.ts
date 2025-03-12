@@ -19,6 +19,7 @@ type UserResponse = {
 type registerResponse = Either<RequiredParametersError, UserResponse>;
 type registerWithInviteResponse = Either<RequiredParametersError, UserResponse>;
 type loginResponse = Either<RequiredParametersError, UserResponse>;
+type meResponse = Either<RequiredParametersError, UserResponse>;
 
 class AuthService {
   private fastify: FastifyInstance;

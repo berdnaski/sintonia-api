@@ -151,4 +151,30 @@ export class UserController {
 
     return reply.status(200).send(updateResult.value);
   }
+
+  async me(req: FastifyRequest, reply: FastifyReply) {
+    const jwt = await req.jwtVerify<{
+      id: string;
+      email: string;
+    }>();
+
+    if (!jwt) {
+      return reply.status(401).send({
+        message: 'Token not found.'
+      });
+    }
+
+    const { id } = jwt;
+    const user = await this.userService.findOne(id);
+
+    if (user.isLeft()) {
+      return reply.status(404).send({
+        message: 'User not found.'
+      });
+    }
+
+    return reply.status(200).send({
+      user: user.value,
+    });
+  }
 }
