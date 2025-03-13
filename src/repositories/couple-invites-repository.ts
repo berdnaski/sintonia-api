@@ -72,7 +72,7 @@ export class PrismaCoupleInvitesRepository implements ICoupleInviteRepository {
       data,
     });
   }
-  
+
   async findInviteByToken(token: string): Promise<CoupleInvite | null> {
     return prisma.coupleInvite.findUnique({
       where: { token },
@@ -82,6 +82,12 @@ export class PrismaCoupleInvitesRepository implements ICoupleInviteRepository {
   async findInviteByInviteeEmail(email: string): Promise<CoupleInvite | null> {
     return prisma.coupleInvite.findFirst({
       where: { inviteeEmail: email, used: false },
+    });
+  }
+
+  async findInviteByInviterId(inviterId: string): Promise<CoupleInvite | null> {
+    return prisma.coupleInvite.findFirst({
+      where: { inviterId: inviterId, used: false },
     });
   }
 }

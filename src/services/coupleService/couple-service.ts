@@ -47,11 +47,13 @@ export class CoupleService {
 
   async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
     const inviter = await this.userRepository.findOne(inviterId);
+
     if (!inviter) {
       return left(new RequiredParametersError("User who sent the invitation was not found.", 400));
     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(inviter.id);
+
     if (inviterCouple) {
       return left(new RequiredParametersError("You already belong in a relationship."));
     }
@@ -59,15 +61,22 @@ export class CoupleService {
     const invitee = await this.userRepository.findOne(inviteeEmail);
     let inviteeName = "amado(a)"; // default name if user not exists
     let url = "";
-    
+
     const inviteeCouple = invitee ? await this.coupleRepository.findCoupleByUserId(invitee.id) : null;
     if (inviteeCouple) {
       return left(new RequiredParametersError("The Guest is already in a relationship."));
     }
 
-    const existingInvite = await this.coupleInviteRepository.findInviteByInviteeEmail(inviteeEmail);
+    let existingInvite = await this.coupleInviteRepository.findInviteByInviteeEmail(inviteeEmail);
+
     if (existingInvite && !existingInvite.used) {
       return left(new RequiredParametersError("There is already a pending invitation for that email."));
+    }
+
+    existingInvite = await this.coupleInviteRepository.findInviteByInviterId(inviter.id);
+
+    if (existingInvite && !existingInvite.used) {
+      return left(new RequiredParametersError("Already have a pending invitation."));
     }
 
     const invite = await this.coupleInviteRepository.create({

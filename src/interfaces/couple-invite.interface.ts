@@ -42,4 +42,5 @@ export interface ICoupleInviteRepository {
   saveSingle(token: CoupleInvite): Promise<void>;
   findInviteByToken(token: string): Promise<CoupleInvite | null>
   findInviteByInviteeEmail(email: string): Promise<CoupleInvite | null>
+  findInviteByInviterId(inviterId: string): Promise<CoupleInvite | null>
 }
