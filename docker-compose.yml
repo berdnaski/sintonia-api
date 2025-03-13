@@ -8,3 +8,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: docker
       POSTGRES_DB: sintonia_db
+  mailpit:
+    image: 'axllent/mailpit:latest'
+    ports:
+      - 1025:1025
+      - 8025:8025

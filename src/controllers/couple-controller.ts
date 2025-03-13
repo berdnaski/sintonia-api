@@ -29,9 +29,8 @@ export class CoupleController {
     }
 
     const result = await this.coupleService.invitePartner(userId, email);
-    
+
     if (result.isLeft()) {
-      console.log('isLeft');
       return reply.status(result.value.statusCode).send(result.value.message);
     }
 
