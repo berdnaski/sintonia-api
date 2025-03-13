@@ -19,7 +19,14 @@ export class CoupleController {
     const user = req.user as User;
     const userId = user.id;
 
+    if (user.email === email) {
+      return reply.status(400).send({
+        message: 'You cannot invite yourself.'
+      });
+    }
+
     const validateBody = CreateCoupleInvite.safeParse({ email });
+
     if (!validateBody.success) {
       const errors = validateBody.error.flatten().fieldErrors
       return reply.status(400).send({
@@ -31,10 +38,12 @@ export class CoupleController {
     const result = await this.coupleService.invitePartner(userId, email);
 
     if (result.isLeft()) {
-      return reply.status(result.value.statusCode).send(result.value.message);
+      return reply.status(400).send({
+        message: result.value.message
+      });
     }
 
-    reply.status(200).send(result);
+    reply.status(200).send(result.value);
   }
 
   async cancelInvite(req: FastifyRequest<{ Params: { inviteId: string } }>, reply: FastifyReply) {
