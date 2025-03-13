@@ -104,6 +104,7 @@ export class CoupleService {
       relationshipStatus: "pending",
       user1Id: inviterId,
       user2Id: invitee ? invitee.id : null,
+      token: invite.token,
       createdAt: invite.createdAt || new Date(),
     });
   }
