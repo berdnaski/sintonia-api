@@ -184,7 +184,17 @@ export class CoupleService {
     const couple = await this.coupleRepository.findOne(id);
 
     if (!couple) {
-      return left(new RequiredParametersError("Couple not found."));
+      return left(new RequiredParametersError("Couple not found.", 404));
+    }
+
+    return right(couple);
+  }
+
+  async findByUserId(userId: string): Promise<FindOneCoupleResponse> {
+    const couple = await this.coupleRepository.findCoupleByUserId(userId);
+
+    if (!couple) {
+      return left(new RequiredParametersError("Couple not found.", 404, 'NOT_FOUND'));
     }
 
     return right(couple);

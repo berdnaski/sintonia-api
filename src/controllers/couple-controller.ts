@@ -83,6 +83,20 @@ export class CoupleController {
     return reply.status(200).send(couple);
   }
 
+  async findByUserId(req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply): Promise<Couple> {
+    const { userId } = req.params;
+    const couple = await this.coupleService.findByUserId(userId);
+
+    if (couple.isLeft()) {
+      return reply.status(couple.value.statusCode).send({
+        message: "Couple not found",
+        code: couple.value.code
+      })
+    }
+
+    return reply.status(200).send(couple.value);
+  }
+
   async delete(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply): Promise<Couple> {
     const { id } = req.params;
     const couple = await this.coupleService.delete(id);

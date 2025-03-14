@@ -6,6 +6,23 @@ export class PrismaCoupleRepository implements ICoupleRepository {
   async findCoupleByUserId(userId: string): Promise<Couple | null> {
     return prisma.couple.findFirst({
       where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
+      include: {
+        user1: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        user2: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      }
+
     });
   }
 
@@ -21,19 +38,19 @@ export class PrismaCoupleRepository implements ICoupleRepository {
       prisma.aIResponse.deleteMany({
         where: { coupleId: id },
       }),
-  
+
       // Excluir os sinais relacionados
       prisma.signal.deleteMany({
         where: { coupleId: id },
       }),
-  
+
       // Excluir o couple
       prisma.couple.delete({
         where: { id },
       }),
     ]);
   }
-  
+
 
 
   async createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite> {

@@ -32,4 +32,9 @@ export async function coupleRoutes(app: FastifyInstance) {
   app.delete<{ Params: { id: string } }>('/couples/:id', async (req, reply) => {
     await coupleController.delete(req, reply);
   })
+
+  app.get<{ Params: { userId: string } }>('/couples/by-user/:userId', async (req, reply) => {
+    await coupleController.findByUserId(req, reply);
+  })
+
 }
