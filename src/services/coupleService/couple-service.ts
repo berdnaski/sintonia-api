@@ -35,14 +35,12 @@ export class CoupleService {
   private coupleInviteRepository: ICoupleInviteRepository;
   private userRepository: IUserRepository;
   private mailProvider: MailProvider;
-  private authController: AuthController
 
   constructor(fastify: FastifyInstance) {
     this.coupleRepository = new PrismaCoupleRepository();
     this.coupleInviteRepository = new PrismaCoupleInvitesRepository();
     this.userRepository = new PrismaUserRepository();
     this.mailProvider = new MailProvider();
-    this.authController = new AuthController(fastify);
   }
 
   async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
