@@ -1,5 +1,5 @@
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { CreateUser, UserLogin } from "../interfaces/user.interface";
+import { CreateUser, CreateUserWithInvite, UserLogin } from "../interfaces/user.interface";
 import { AuthService } from "../services/authService/auth-service";
 
 export class AuthController {
@@ -32,13 +32,14 @@ export class AuthController {
   }
 
   async registerWithInvite(
-    req: FastifyRequest<{ Body: CreateUser, Params: { inviteToken: string } }>,
+    req: FastifyRequest<{ Body: CreateUserWithInvite, Params: { inviteToken: string } }>,
     reply: FastifyReply
   ) {
-    const { name, email, password } = req.body;
+    const { name, password } = req.body;
     const { inviteToken } = req.params;
 
-    const validateBody = CreateUser.safeParse({ name, email, password });
+    const validateBody = CreateUserWithInvite.safeParse({ name, password });
+
     if (!validateBody.success) {
       const errors = validateBody.error.flatten().fieldErrors;
       return reply.status(400).send({
@@ -49,7 +50,6 @@ export class AuthController {
 
     const result = await this.authService.registerWithInvite({
       name,
-      email,
       password,
       inviteToken,
     });

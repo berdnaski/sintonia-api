@@ -136,6 +136,7 @@ export class CoupleService {
 
   async acceptInvite(token: string, inviteeId: string): Promise<AcceptInviteResponse> {
     const invite = await this.coupleInviteRepository.findInviteByToken(token);
+
     if (!invite) {
       return left(new RequiredParametersError("Invitation not found or invalid."));
     }
@@ -149,11 +150,13 @@ export class CoupleService {
     }
 
     const inviteeCouple = await this.coupleRepository.findCoupleByUserId(inviteeId);
+
     if (inviteeCouple) {
       return left(new RequiredParametersError("You are already in a couple."));
     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(invite.inviterId);
+
     if (inviterCouple) {
       return left(new RequiredParametersError("The user who sent the invite is already in a couple."));
     }

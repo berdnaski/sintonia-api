@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import { FastifyInstance } from "fastify";
 import { Either, left, right } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
-import { CreateUser, IUserRepository, UserLogin } from "../../interfaces/user.interface";
+import { CreateUser, CreateUserWithInvite, IUserRepository, UserLogin } from "../../interfaces/user.interface";
 import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 import { hashPassword, verifyPassword } from "../../utils/hash";
@@ -60,26 +60,28 @@ class AuthService {
     return right({ user, token, customer });
   }
 
-  async registerWithInvite(data: CreateUser & { inviteToken: string }): Promise<registerWithInviteResponse> {
-    const { name, email, password, inviteToken } = data;
+  async registerWithInvite(data: CreateUserWithInvite & { inviteToken: string }): Promise<registerWithInviteResponse> {
+    const { name, password, inviteToken } = data;
 
     const coupleInviteRepository = new PrismaCoupleInvitesRepository();
     const invite = await coupleInviteRepository.findInviteByToken(inviteToken);
+
     if (!invite || invite.used || dayjs().isAfter(dayjs.unix(invite.expiresAt))) {
       return left(new RequiredParametersError("Invalid or expired invite token."));
     }
 
-    if (invite.inviteeEmail !== email) {
-      return left(new RequiredParametersError("Email does not match the invite email."));
-    }
+    const email = invite.inviteeEmail
 
     const existingUser = await this.userRepository.findOne(email);
+
     if (existingUser) {
       return left(new RequiredParametersError("Email already in use."));
     }
 
     const hashedPassword = await hashPassword(password);
+
     const customer = await createStripeCustomer({ email, name });
+
     const user = await this.userRepository.create({
       name,
       email,
@@ -94,6 +96,7 @@ class AuthService {
 
     const coupleService = new CoupleService(this.fastify);
     const acceptResult = await coupleService.acceptInvite(inviteToken, String(user?.id));
+
     if (acceptResult.isLeft()) {
       console.error(acceptResult.value.message);
     }

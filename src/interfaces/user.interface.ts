@@ -10,16 +10,20 @@ export interface IUser {
   subscriptionStatus?: string;
   createdAt?: Date;
   updatedAt?: Date;
-  stripeCustomerId?: string; 
+  stripeCustomerId?: string;
 }
 
 export const CreateUser = z.object({
   name: z.string().min(3, 'Name must have at least 3 characters').max(20, 'Name should not exceed 20 characters'),
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Password must have at least 6 characters').max(255, 'Password should not exceed 255 characters'),
-  stripeCustomerId: z.string().optional(), 
+  stripeCustomerId: z.string().optional(),
 });
+
+export const CreateUserWithInvite = CreateUser.omit({ email: true})
+
 export type CreateUser = z.infer<typeof CreateUser>;
+export type CreateUserWithInvite = z.infer<typeof CreateUserWithInvite>;
 
 export interface UserResponse {
   users: User[];
