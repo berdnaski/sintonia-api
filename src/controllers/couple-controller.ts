@@ -1,7 +1,7 @@
 import type { Couple, User } from '@prisma/client';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { CreateCoupleInvite } from '../interfaces/couple.interface';
-import { CoupleInviteService } from '../services/coupleInvitesService/coupleInvites-.service';
+import { CoupleInviteService } from '../services/coupleInvitesService/couple-invites.service';
 import { CoupleService } from '../services/coupleService/couple-service';
 
 export class CoupleController {
