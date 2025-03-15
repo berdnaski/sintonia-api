@@ -42,6 +42,7 @@ model User {
   invites            CoupleInvite[] @relation("Inviter")
 
   @@map("users")
+  Memory Memory[]
 }
 
 model Couple {
@@ -56,6 +57,7 @@ model Couple {
   aiResponses        AIResponse[] @relation
 
   @@map("couples")
+  Memory Memory[]
 }
 
 model CoupleInvite {
@@ -116,4 +118,18 @@ model Tokens {
   expiresIn Int
 
   @@map("tokens")
+}
+
+model Memory {
+  id            String   @id @default(uuid())
+  title         String
+  description   String
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  coupleId      String
+  couple        Couple   @relation(fields: [coupleId], references: [id])
+  createdByUserId String
+  createdByUser  User    @relation(fields: [createdByUserId], references: [id])
+
+  @@map("memories")
 }
