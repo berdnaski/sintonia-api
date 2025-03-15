@@ -11,6 +11,7 @@ import { coupleRoutes } from './routes/coupleRoutes';
 import { signalRoutes } from './routes/signalRoutes';
 import { checkoutRoutes } from './routes/checkoutRoutes';
 import { webhookRoutes } from './routes/webhookRoutes';
+import { coupleInviteRoutes } from './routes/couple-invite-routes';
 
 const app: FastifyInstance = fastify();
 
@@ -25,20 +26,18 @@ app.setErrorHandler(errorHandler);
 app.register(fastifyCors);
 app.register(fastifyFormbody);
 
-// Registro do 'fastify-raw-body' apenas para rotas de webhook
 app.register(fastifyRawBody, {
-  field: 'rawBody',  // Armazena o corpo da requisição em 'rawBody'
+  field: 'rawBody',
   encoding: 'utf-8',
 });
 
-// Registrar as rotas
 app.register(authRoutes, { prefix: 'auth' });
 app.register(userRoutes);
 app.register(checkoutRoutes);
+app.register(coupleInviteRoutes);
 app.register(coupleRoutes);
 app.register(signalRoutes);
-app.register(webhookRoutes, { prefix: 'data' });  // As rotas de webhook estão com o prefixo 'data'
+app.register(webhookRoutes, { prefix: 'data' });
 
-// Iniciar o servidor
 const PORT = Number(process.env.PORT) || 3000;
 app.listen({ port: PORT }, () => console.log(`listening on port ${PORT}`));

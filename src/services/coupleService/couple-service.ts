@@ -35,14 +35,12 @@ export class CoupleService {
   private coupleInviteRepository: ICoupleInviteRepository;
   private userRepository: IUserRepository;
   private mailProvider: MailProvider;
-  private authController: AuthController
 
   constructor(fastify: FastifyInstance) {
     this.coupleRepository = new PrismaCoupleRepository();
     this.coupleInviteRepository = new PrismaCoupleInvitesRepository();
     this.userRepository = new PrismaUserRepository();
     this.mailProvider = new MailProvider();
-    this.authController = new AuthController(fastify);
   }
 
   async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
@@ -138,6 +136,7 @@ export class CoupleService {
 
   async acceptInvite(token: string, inviteeId: string): Promise<AcceptInviteResponse> {
     const invite = await this.coupleInviteRepository.findInviteByToken(token);
+
     if (!invite) {
       return left(new RequiredParametersError("Invitation not found or invalid."));
     }
@@ -151,11 +150,13 @@ export class CoupleService {
     }
 
     const inviteeCouple = await this.coupleRepository.findCoupleByUserId(inviteeId);
+
     if (inviteeCouple) {
       return left(new RequiredParametersError("You are already in a couple."));
     }
 
     const inviterCouple = await this.coupleRepository.findCoupleByUserId(invite.inviterId);
+
     if (inviterCouple) {
       return left(new RequiredParametersError("The user who sent the invite is already in a couple."));
     }
@@ -183,7 +184,17 @@ export class CoupleService {
     const couple = await this.coupleRepository.findOne(id);
 
     if (!couple) {
-      return left(new RequiredParametersError("Couple not found."));
+      return left(new RequiredParametersError("Couple not found.", 404));
+    }
+
+    return right(couple);
+  }
+
+  async findByUserId(userId: string): Promise<FindOneCoupleResponse> {
+    const couple = await this.coupleRepository.findCoupleByUserId(userId);
+
+    if (!couple) {
+      return left(new RequiredParametersError("Couple not found.", 404, 'NOT_FOUND'));
     }
 
     return right(couple);

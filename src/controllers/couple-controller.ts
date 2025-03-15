@@ -1,7 +1,7 @@
 import type { Couple, User } from '@prisma/client';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { CreateCoupleInvite } from '../interfaces/couple.interface';
-import { CoupleInviteService } from '../services/coupleInvitesService/coupleInvites-.service';
+import { CoupleInviteService } from '../services/coupleInvitesService/couple-invites.service';
 import { CoupleService } from '../services/coupleService/couple-service';
 
 export class CoupleController {
@@ -81,6 +81,20 @@ export class CoupleController {
     const { id } = req.params;
     const couple = await this.coupleService.findOne(id);
     return reply.status(200).send(couple);
+  }
+
+  async findByUserId(req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply): Promise<Couple> {
+    const { userId } = req.params;
+    const couple = await this.coupleService.findByUserId(userId);
+
+    if (couple.isLeft()) {
+      return reply.status(couple.value.statusCode).send({
+        message: "Couple not found",
+        code: couple.value.code
+      })
+    }
+
+    return reply.status(200).send(couple.value);
   }
 
   async delete(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply): Promise<Couple> {

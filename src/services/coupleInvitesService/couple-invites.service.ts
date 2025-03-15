@@ -39,6 +39,11 @@ class CoupleInviteService {
     return right(result);
   }
 
+  async getCoupleInviteByToken(token: string): Promise<getCoupleInviteByIdResponse> {
+    const result = await this.coupleInviteRepository.findInviteByToken(token);
+    return right(result);
+  }
+
   async deleteCoupleInvite(id: string): Promise<deleteCoupleInviteResponse> {
     const coupleInvite = await this.coupleInviteRepository.getById(id);
     if (!coupleInvite) {
