@@ -1,4 +1,4 @@
-import { Couple } from "@prisma/client";
+import { Couple, User } from "@prisma/client";
 import dayjs from "dayjs";
 import { FastifyInstance } from "fastify";
 import { v4 as uuidv4 } from "uuid";
@@ -12,7 +12,7 @@ import { IUserRepository } from "../../interfaces/user.interface";
 import { MailProvider } from "../../providers/mail/implementations/MailProvider";
 import { InviteToCoupleMailTemplate } from "../../providers/mail/templates/InviteCoupleTemplate";
 import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites-repository";
-import { PrismaCoupleRepository } from "../../repositories/couple-repository";
+import { CoupleWithUsers, PrismaCoupleRepository } from "../../repositories/couple-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
 
 type PendingCouple = {
@@ -28,6 +28,7 @@ type CancelInviteResponse = Either<RequiredParametersError, string>;
 type AcceptInviteResponse = Either<RequiredParametersError, Couple>;
 type DeleteCoupleResponse = Either<RequiredParametersError, string>;
 type FindOneCoupleResponse = Either<RequiredParametersError, Couple>;
+type FindOneByAnyUserCoupleResponse = Either<RequiredParametersError, CoupleWithUsers>;
 type FindAllCoupleResponse = Either<RequiredParametersError, Couple[]>;
 
 export class CoupleService {
@@ -190,7 +191,7 @@ export class CoupleService {
     return right(couple);
   }
 
-  async findByUserId(userId: string): Promise<FindOneCoupleResponse> {
+  async findByUserId(userId: string): Promise<FindOneByAnyUserCoupleResponse> {
     const couple = await this.coupleRepository.findCoupleByUserId(userId);
 
     if (!couple) {

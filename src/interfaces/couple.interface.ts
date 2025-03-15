@@ -1,5 +1,6 @@
 import { Couple, CoupleInvite, User } from "@prisma/client";
 import z from 'zod';
+import { CoupleWithUsers } from "../repositories/couple-repository";
 
 export interface ICouple {
   id?: string;
@@ -28,7 +29,7 @@ export interface ListCouplesResponse {
 }
 
 export interface ICoupleRepository {
-  findCoupleByUserId(userId: string): Promise<Couple | null>;
+  findCoupleByUserId(userId: string): Promise<CoupleWithUsers | null>;
   createCouple(user1Id: string, user2Id: string, status: string): Promise<Couple>;
   deleteCouple(coupleId: string): Promise<void>;
   createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite>;

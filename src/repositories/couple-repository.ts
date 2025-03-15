@@ -1,9 +1,15 @@
-import { Couple, CoupleInvite } from "@prisma/client";
+import { Couple, CoupleInvite, User } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import { ICoupleRepository } from "../interfaces/couple.interface";
 
+
+export type CoupleWithUsers = Couple & {
+  user1: Pick<User, 'id' | 'name' | 'email' | 'stripeSubscriptionStatus'>;
+  user2: Pick<User, 'id' | 'name' | 'email' | 'stripeSubscriptionStatus'>;
+};
+
 export class PrismaCoupleRepository implements ICoupleRepository {
-  async findCoupleByUserId(userId: string): Promise<Couple | null> {
+  async findCoupleByUserId(userId: string): Promise<CoupleWithUsers | null> {
     return prisma.couple.findFirst({
       where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
       include: {
@@ -12,6 +18,7 @@ export class PrismaCoupleRepository implements ICoupleRepository {
             id: true,
             name: true,
             email: true,
+            stripeSubscriptionStatus: true,
           },
         },
         user2: {
@@ -19,6 +26,7 @@ export class PrismaCoupleRepository implements ICoupleRepository {
             id: true,
             name: true,
             email: true,
+            stripeSubscriptionStatus: true
           },
         },
       }
