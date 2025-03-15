@@ -25,15 +25,16 @@ export class SignalService {
     this.IAIResponseRepository = new PrismaAIResponseRepository()
   }
 
-  async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {    
+  async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {
     await this.signalRepository.create({ userId, coupleId, emotion, note })
-    
+
     const message = `Emotion: ${emotion}, Note: ${note}`
     const answer = await AnswerSignalMessage({ message, coupleId })
 
     const result = await this.IAIResponseRepository.create({
       ...answer.response,
-      coupleId
+      challenge: answer.response.challenge || undefined,
+      coupleId,
     })
 
     return right(result);
