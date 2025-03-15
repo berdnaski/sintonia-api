@@ -1,9 +1,8 @@
-import { Couple, User } from "@prisma/client";
+import { Couple } from "@prisma/client";
 import dayjs from "dayjs";
 import { FastifyInstance } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import { sintoniaConfig } from "../../config/api";
-import { AuthController } from "../../controllers/auth-controller";
 import { Either, left, right } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
 import { ICoupleInviteRepository } from "../../interfaces/couple-invite.interface";

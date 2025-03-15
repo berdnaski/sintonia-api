@@ -1,8 +1,6 @@
-import type { User } from "@prisma/client";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { UserService } from "../services/userService/user.service";
 import { CoupleService } from "../services/coupleService/couple-service";
-import { emitWarning } from "process";
 
 export const CheckSubscription = async (
   request: FastifyRequest,
