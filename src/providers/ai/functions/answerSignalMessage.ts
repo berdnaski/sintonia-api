@@ -75,32 +75,36 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
     const answer = await generateText({
       model: deepseek,
       prompt: `
-        Você é um assistente de IA especializado em relacionamentos e está falando diretamente com o casal.
-        Sua tarefa é fornecer conselhos e análises com base nos dados do relacionamento.
-        
-        Mensagem atual: ${message}
-        Histórico de interações: ${JSON.stringify(interactionHistory)}
-        Sinais recentes: ${JSON.stringify(signals)}
-        
-        Responda como se estivesse falando diretamente com o casal, utilizando a segunda pessoa (você, seu, sua) no lugar de uma narrativa em terceira pessoa.
-        RESPONDA EXATAMENTE NESTE FORMATO, sem quebras de linha:
-        {"summary":"[máximo 500 caracteres]","advice":"[máximo 500 caracteres]","progress":"[máximo 500 caracteres]"}
-      `,
-      maxTokens: 200, 
-      temperature: 0.5, 
-      system: `Você é um assistente de IA especializado em análise de relacionamentos.
-        Com base nos dados fornecidos, você deve se comunicar diretamente com o casal. 
-        Use sempre a segunda pessoa (você, seu, sua) e evite falar sobre eles como "o casal".
-        Forneça conselhos práticos, resumos e desafios de maneira direta e pessoal.
-        REGRAS IMPORTANTES:
-        - Responda APENAS em formato JSON válido
-        - Use SOMENTE os campos "summary", "advice"
-        - Mantenha cada resposta com no máximo 500 caracteres
-        - NÃO use quebras de linha no JSON
-        - NÃO use caracteres especiais
-        - NÃO inclua texto fora do JSON
-        - SEMPRE feche todas as aspas e chaves corretamente
-        - SEMPRE mantenha as respostas curtas e diretas`
+Você é um assistente de IA especializado em relacionamentos, conversando de forma próxima e acolhedora com o casal. Sua missão é oferecer conselhos, reflexões e desafios personalizados com base nos dados do relacionamento.
+
+Dados:
+Mensagem atual: ${message}
+Histórico de interações: ${JSON.stringify(interactionHistory)}
+Sinais recentes: ${JSON.stringify(signals)}
+
+Instruções:
+- Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
+- Ofereça conselhos práticos e reflexões empáticas, de forma pessoal e acolhedora.
+- Insira, TODOS OS DIAS, duas perguntas reflexivas para estimular o diálogo e a autoavaliação.
+- Envie um desafio semanalmente (a cada 7 dias) para incentivar novas experiências; se não for o dia do desafio, retorne uma string vazia ("") no campo "challenge".
+- Responda APENAS em formato JSON válido, utilizando os campos "summary", "advice" e "challenge".
+- Cada campo deve conter no máximo 500 caracteres.
+- NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
+
+Formato exato da resposta:
+{"summary":"[máximo 500 caracteres]","advice":"[máximo 500 caracteres com 2 perguntas reflexivas]","challenge":"[desafio semanal ou string vazia]"}
+`,
+      system: `
+Você é um assistente de IA especializado em análise de relacionamentos, conversando de forma empática e direta com o casal. Seu objetivo é oferecer conselhos práticos e reflexões para melhorar a convivência e a relação de vocês.
+REGRAS IMPORTANTES:
+- Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
+- Insira duas perguntas reflexivas na resposta diária para promover o autoconhecimento.
+- Envie um desafio semanal (a cada 7 dias) para incentivar novas experiências; caso não seja o dia do desafio, retorne uma string vazia no campo "challenge".
+- Responda APENAS em formato JSON válido com os campos "summary", "advice" e "challenge".
+- Cada campo deve ter, no máximo, 500 caracteres.
+- NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
+- SEMPRE feche todas as aspas e chaves corretamente e mantenha as respostas curtas e diretas.
+`
     });
 
     if (!answer?.text) {
@@ -134,8 +138,8 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
 
       const summaryMatch = cleanText.match(/"summary"\s*:\s*"([^"]+)"/);
       const adviceMatch = cleanText.match(/"advice"\s*:\s*"([^"]+)"/);
-      // const progressMatch = cleanText.match(/"progress"\s*:\s*"([^"]+)"/);
-      // const challengeMatch = cleanText.match(/"challenge"\s*:\s*"([^"]+)"/);
+      const progressMatch = cleanText.match(/"progress"\s*:\s*"([^"]+)"/);
+      const challengeMatch = cleanText.match(/"challenge"\s*:\s*"([^"]*)"/);
 
       if (!summaryMatch || !adviceMatch) {
         throw new Error('Missing required fields');
@@ -144,8 +148,8 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
       const fixedResponse = {
         summary: summaryMatch[1].substring(0, 500),
         advice: adviceMatch[1].substring(0, 500),
-        // progress: progressMatch[1].substring(0, 500),
-        // challenge: challengeMatch[1].substring(0, 500)
+        progress: progressMatch?.[1].substring(0, 500),
+        challenge: challengeMatch?.[1].substring(0, 500)
       };
 
       return {
