@@ -68,7 +68,7 @@ export class CoupleController {
     const couple = await this.coupleService.acceptInvite(token, inviteeId);
     return reply.status(200).send({
       message: 'Invitation accepted successfully!',
-      couple,
+      couple: couple.value,
     });
   }
 

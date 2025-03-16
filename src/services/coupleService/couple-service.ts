@@ -88,7 +88,7 @@ export class CoupleService {
     });
 
     if (invitee) {
-      url = `${sintoniaConfig.frontend}/couple/accept/${invite.token}`;
+      url = `${sintoniaConfig.frontend}/auth/login/${invite.token}`;
     } else {
       url = `${sintoniaConfig.frontend}/auth/register-with-invite/token/${invite.token}`;
     }

@@ -173,8 +173,6 @@ export class UserController {
       });
     }
 
-    return reply.status(200).send({
-      user: user.value,
-    });
+    return reply.status(200).send(user.value);
   }
 }
