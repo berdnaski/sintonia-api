@@ -22,42 +22,84 @@ enum StatusPlan {
   Canceled
 }
 
+enum CoupleMetricClassification {
+  Synchrony
+  Connection
+  Communication
+  Intensity
+}
+
+enum CoupleMetricLevel {
+  VERY_LOW
+  LOW
+  MODERATE
+  HIGH
+  VERY_HIGH
+  EXTREME
+}
+
 model User {
-  id                 String         @id @default(uuid())
-  name               String
-  email              String         @unique
-  password           String
-  avatarUrl          String?
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  subscriptionStatus StatusPlan     @default(NoPlan)
-  stripeCustomerId String?
+  id                       String         @id @default(uuid())
+  name                     String
+  email                    String         @unique
+  password                 String
+  avatarUrl                String?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  subscriptionStatus       StatusPlan     @default(NoPlan)
+  stripeCustomerId         String?
   stripeSubscriptionStatus String?
-  stripeSubscriptionId String?
-  signals            Signal[]       @relation
-  subscriptions      Subscription[] @relation
-  coupleAsUser1      Couple?        @relation("CoupleUser1")
-  coupleAsUser2      Couple?        @relation("CoupleUser2")
-  Tokens             Tokens[]       @relation("Tokens")
-  invites            CoupleInvite[] @relation("Inviter")
+  stripeSubscriptionId     String?
+  signals                  Signal[]       @relation
+  subscriptions            Subscription[] @relation
+  coupleAsUser1            Couple?        @relation("CoupleUser1")
+  coupleAsUser2            Couple?        @relation("CoupleUser2")
+  Tokens                   Tokens[]       @relation("Tokens")
+  invites                  CoupleInvite[] @relation("Inviter")
+  Memory                   Memory[]
 
   @@map("users")
-  Memory Memory[]
 }
 
 model Couple {
-  id                 String       @id @default(uuid())
+  id                 String         @id @default(uuid())
   relationshipStatus String
-  user1              User         @relation("CoupleUser1", fields: [user1Id], references: [id])
-  user1Id            String       @unique
-  user2              User         @relation("CoupleUser2", fields: [user2Id], references: [id])
-  user2Id            String       @unique
-  createdAt          DateTime     @default(now())
-  signals            Signal[]     @relation
-  aiResponses        AIResponse[] @relation
+  user1              User           @relation("CoupleUser1", fields: [user1Id], references: [id])
+  user1Id            String         @unique
+  user2              User           @relation("CoupleUser2", fields: [user2Id], references: [id])
+  user2Id            String         @unique
+  createdAt          DateTime       @default(now())
+  signals            Signal[]       @relation
+  aiResponses        AIResponse[]   @relation
+  Memory             Memory[]
+  CoupleMetric       CoupleMetric[]
 
   @@map("couples")
-  Memory Memory[]
+}
+
+model CoupleMetric {
+  id                  String               @id @default(uuid())
+  coupleId            String
+  couple              Couple               @relation(fields: [coupleId], references: [id])
+  synchrony           Int
+  connection          Int
+  communication       Int
+  intensity           Int
+  CoupleMetricRecords CoupleMetricRecord[]
+
+  @@map("couple_metrics")
+}
+
+model CoupleMetricRecord {
+  id             String                     @id @default(uuid())
+  coupleMetricId String
+  coupleMetric   CoupleMetric               @relation(fields: [coupleMetricId], references: [id])
+  classification CoupleMetricClassification
+  level          CoupleMetricLevel
+  percentage     Int
+  createdAt      DateTime                   @default(now())
+
+  @@map("couple_metric_records")
 }
 
 model CoupleInvite {
@@ -87,24 +129,27 @@ model Signal {
 }
 
 model AIResponse {
-  id        String   @id @default(uuid())
-  coupleId  String
-  summary   String
-  advice    String
-  challenge String?
-  createdAt DateTime @default(now())
-  couple    Couple   @relation(fields: [coupleId], references: [id])
+  id             String                      @id @default(uuid())
+  coupleId       String
+  summary        String
+  advice         String
+  challenge      String?
+  classification CoupleMetricClassification?
+  level          CoupleMetricLevel?
+  percentage     Int?
+  createdAt      DateTime                    @default(now())
+  couple         Couple                      @relation(fields: [coupleId], references: [id])
 
   @@map("ai_responses")
 }
 
 model Subscription {
-  id                   String     @id @default(uuid())
-  userId               String
-  status               StatusPlan @default(NoPlan)
-  planType             PlanType   @default(None)
-  expiresIn            DateTime
-  user                 User       @relation(fields: [userId], references: [id])
+  id        String     @id @default(uuid())
+  userId    String
+  status    StatusPlan @default(NoPlan)
+  planType  PlanType   @default(None)
+  expiresIn DateTime
+  user      User       @relation(fields: [userId], references: [id])
 
   @@map("subscriptions")
 }
@@ -121,15 +166,15 @@ model Tokens {
 }
 
 model Memory {
-  id            String   @id @default(uuid())
-  title         String
-  description   String
-  avatarUrl     String?
-  createdAt     DateTime @default(now())
-  coupleId      String
-  couple        Couple   @relation(fields: [coupleId], references: [id])
+  id              String   @id @default(uuid())
+  title           String
+  description     String
+  avatarUrl       String?
+  createdAt       DateTime @default(now())
+  coupleId        String
+  couple          Couple   @relation(fields: [coupleId], references: [id])
   createdByUserId String
-  createdByUser  User    @relation(fields: [createdByUserId], references: [id])
+  createdByUser   User     @relation(fields: [createdByUserId], references: [id])
 
   @@map("memories")
 }

@@ -1,10 +1,13 @@
-import { AIResponse } from "@prisma/client";
+import { AIResponse, CoupleMetricClassification, CoupleMetricLevel } from "@prisma/client";
 
 export interface ICreateIAResponse {
   coupleId: string;
   summary: string;
   advice: string;
   challenge?: string;
+  level: CoupleMetricLevel | null;
+  classification: CoupleMetricClassification | null,
+  percentage: string | number | null
 }
 
 export interface GenerateAnalysisResponse {

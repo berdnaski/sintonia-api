@@ -1,4 +1,4 @@
-import type { AIResponse, Signal } from "@prisma/client";
+import type { AIResponse, CoupleMetric, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
@@ -7,6 +7,8 @@ import type { ISignalRepository, ISignalUpdate } from "../../interfaces/signal.i
 import { AnswerSignalMessage } from "../../providers/ai/functions/answerSignalMessage";
 import { PrismaAIResponseRepository } from "../../repositories/ai-response-repository";
 import { PrismaSignalRepository } from "../../repositories/signal-repository";
+import { CoupleMetricService } from "../coupleMetricService/couple-metric-service";
+import { CoupleMetricRecordService } from "../coupleMetricRecordService/couple-metric-record-service";
 
 type generateAnalysisResponse = Either<RequiredParametersError, AIResponse>
 type getAnalysisHistoryResponse = Either<RequiredParametersError, AIResponse[]>
@@ -19,10 +21,14 @@ type removeSignalResponse = Either<RequiredParametersError, Signal>;
 export class SignalService {
   private signalRepository: ISignalRepository;
   private IAIResponseRepository: IAIResponseRepository
+  private metricService: CoupleMetricService
+  private metricRecordService: CoupleMetricRecordService
 
   constructor(fastify: FastifyInstance) {
     this.signalRepository = new PrismaSignalRepository();
-    this.IAIResponseRepository = new PrismaAIResponseRepository()
+    this.IAIResponseRepository = new PrismaAIResponseRepository();
+    this.metricService = new CoupleMetricService(fastify)
+    this.metricRecordService = new CoupleMetricRecordService(fastify)
   }
 
   async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {
@@ -34,8 +40,22 @@ export class SignalService {
     const result = await this.IAIResponseRepository.create({
       ...answer.response,
       challenge: answer.response.challenge || undefined,
-      coupleId,
     })
+
+    const metric = await this.metricService.findByCoupleId(coupleId)
+
+    if (metric.isLeft()) {
+      return left(metric.value);
+    }
+
+    await this.metricRecordService.create({
+      coupleMetricId: metric.value.id,
+      classification: result.classification,
+      level: result.level,
+      percentage: result.percentage
+    })
+
+    await this.metricService.calculateAverageMetrics(metric.value)
 
     return right(result);
   }

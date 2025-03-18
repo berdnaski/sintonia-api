@@ -13,6 +13,7 @@ import { InviteToCoupleMailTemplate } from "../../providers/mail/templates/Invit
 import { PrismaCoupleInvitesRepository } from "../../repositories/couple-invites-repository";
 import { CoupleWithUsers, PrismaCoupleRepository } from "../../repositories/couple-repository";
 import { PrismaUserRepository } from "../../repositories/user-repository";
+import { CoupleMetricService } from "../coupleMetricService/couple-metric-service";
 
 type PendingCouple = {
   id: string;
@@ -35,12 +36,14 @@ export class CoupleService {
   private coupleInviteRepository: ICoupleInviteRepository;
   private userRepository: IUserRepository;
   private mailProvider: MailProvider;
+  private metric: CoupleMetricService
 
   constructor(fastify: FastifyInstance) {
     this.coupleRepository = new PrismaCoupleRepository();
     this.coupleInviteRepository = new PrismaCoupleInvitesRepository();
     this.userRepository = new PrismaUserRepository();
     this.mailProvider = new MailProvider();
+    this.metric = new CoupleMetricService(fastify);
   }
 
   async invitePartner(inviterId: string, inviteeEmail: string): Promise<InviteResponse> {
@@ -165,7 +168,11 @@ export class CoupleService {
     const couple = await this.coupleRepository.createCouple(invite.inviterId, invitee.id, "active");
 
     invite.used = true;
-    await this.coupleInviteRepository.save(invite);
+    this.coupleInviteRepository.save(invite);
+
+    this.metric.create({
+      coupleId: couple.id
+    })
 
     return right(couple);
   }
