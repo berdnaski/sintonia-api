@@ -43,9 +43,10 @@ export class SignalService {
   }
   
 
-  async getAnalysisHistory(coupleId: string): Promise<getAnalysisHistoryResponse> {
-    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId)
-    return right(answer)
+  async getAnalysisHistory(coupleId: string, limit: number = 3): Promise<getAnalysisHistoryResponse> {
+    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId, limit);
+  
+    return right(answer);
   }
 
   async getAllAIResponses(): Promise<getAnalysisHistoryResponse> {

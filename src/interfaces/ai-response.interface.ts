@@ -16,6 +16,6 @@ export interface GenerateAnalysisResponse {
 
 export interface IAIResponseRepository {
   create(ai: ICreateIAResponse): Promise<AIResponse>
-  findByCoupleId(coupleId: string): Promise<AIResponse[]>;
+  findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]>;
   findAll(): Promise<AIResponse[]>
 }

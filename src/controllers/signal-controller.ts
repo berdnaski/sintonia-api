@@ -31,16 +31,16 @@ export class SignalController {
     return reply.status(201).send(result.value);
   }
 
-  async findAIResponsesByCoupleId(req: FastifyRequest<{ Params: { coupleId: string } }>, reply: FastifyReply) {
+  async findAIResponsesByCoupleId(req: FastifyRequest<{ Params: { coupleId: string }, Querystring: { limit?: number } }>, reply: FastifyReply) {
     const { coupleId } = req.params;
-    
-    const aiResponsesResult = await this.signalService.getAnalysisHistory(coupleId);
-
+    const { limit = 3 } = req.query; 
+    const aiResponsesResult = await this.signalService.getAnalysisHistory(coupleId, limit);
+  
     if (aiResponsesResult.isLeft()) {
       const error = aiResponsesResult.value;
       return reply.status(400).send({ message: error.message });
     }
-
+  
     return reply.status(200).send(aiResponsesResult.value);
   }
 

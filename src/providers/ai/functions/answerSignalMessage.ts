@@ -41,10 +41,10 @@ const tools = {
     execute: async ({ coupleId }) => {
       const aiResponseRepository = new PrismaAIResponseRepository();
       try {
-        const responses = await aiResponseRepository.findByCoupleId(coupleId);
+        const limit = 3; 
+        const responses = await aiResponseRepository.findByCoupleId(coupleId, limit);
         return JSON.stringify(responses);
       } catch (error) {
-        console.error("Erro ao buscar respostas de IA:", error);
         throw new Error("Erro ao buscar respostas de IA do banco de dados");
       }
     }
