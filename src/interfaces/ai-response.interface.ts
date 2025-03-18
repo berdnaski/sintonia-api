@@ -5,6 +5,7 @@ export interface ICreateIAResponse {
   summary: string;
   advice: string;
   challenge?: string;
+  signalId?: string;
 }
 
 export interface GenerateAnalysisResponse {

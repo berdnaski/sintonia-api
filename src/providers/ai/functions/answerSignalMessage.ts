@@ -104,7 +104,8 @@ REGRAS IMPORTANTES:
 - Cada campo deve ter, no máximo, 500 caracteres.
 - NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
 - SEMPRE feche todas as aspas e chaves corretamente e mantenha as respostas curtas e diretas.
-`
+`,
+maxTokens: 250
     });
 
     if (!answer?.text) {

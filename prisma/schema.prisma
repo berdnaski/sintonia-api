@@ -84,16 +84,19 @@ model Signal {
   couple    Couple   @relation(fields: [coupleId], references: [id])
 
   @@map("signals")
+  AIResponse AIResponse[]
 }
 
 model AIResponse {
   id        String   @id @default(uuid())
   coupleId  String
+  signalId String?
   summary   String
   advice    String
   challenge String?
   createdAt DateTime @default(now())
   couple    Couple   @relation(fields: [coupleId], references: [id])
+  signal Signal? @relation(fields: [signalId], references: [id])
 
   @@map("ai_responses")
 }

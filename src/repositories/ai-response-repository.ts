@@ -9,9 +9,12 @@ export class PrismaAIResponseRepository implements IAIResponseRepository {
         coupleId: data.coupleId,
         summary: data.summary,
         advice: data.advice,
+        challenge: data.challenge,
+        signalId: data.signalId, 
       },
     });
   }
+  
 
   async findByCoupleId(coupleId: string): Promise<AIResponse[]> {
     return prisma.aIResponse.findMany({

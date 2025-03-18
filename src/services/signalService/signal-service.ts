@@ -2,7 +2,7 @@ import type { AIResponse, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
-import { IAIResponseRepository } from "../../interfaces/ai-response.interface";
+import { IAIResponseRepository, type GenerateAnalysisResponse } from "../../interfaces/ai-response.interface";
 import type { ISignalRepository, ISignalUpdate } from "../../interfaces/signal.interface";
 import { AnswerSignalMessage } from "../../providers/ai/functions/answerSignalMessage";
 import { PrismaAIResponseRepository } from "../../repositories/ai-response-repository";
@@ -26,23 +26,31 @@ export class SignalService {
   }
 
   async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {
-    await this.signalRepository.create({ userId, coupleId, emotion, note })
+    const signal = await this.signalRepository.create({ userId, coupleId, emotion, note });
 
-    const message = `Emotion: ${emotion}, Note: ${note}`
-    const answer = await AnswerSignalMessage({ message, coupleId })
+    const message = `Emotion: ${emotion}, Note: ${note}`;
+    const answer = await AnswerSignalMessage({ message, coupleId });
 
     const result = await this.IAIResponseRepository.create({
-      ...answer.response,
-      challenge: answer.response.challenge || undefined,
       coupleId,
-    })
-
+      summary: answer.response.summary,
+      advice: answer.response.advice,
+      challenge: answer.response.challenge || undefined,
+      signalId: signal.id,
+    });
+  
     return right(result);
   }
+  
 
   async getAnalysisHistory(coupleId: string): Promise<getAnalysisHistoryResponse> {
     const answer = await this.IAIResponseRepository.findByCoupleId(coupleId)
     return right(answer)
+  }
+
+  async getAllAIResponses(): Promise<getAnalysisHistoryResponse> {
+    const aiResponses = await this.IAIResponseRepository.findAll();
+    return right(aiResponses);
   }
 
   async save(id: string, updateData: ISignalUpdate): Promise<saveSignalResponse> {
