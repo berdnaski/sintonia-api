@@ -55,15 +55,16 @@ const tools = {
 
 export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMessageParams) {
   try {
-    const signalsResult = await tools.signalsFromDatabase.execute(
-      { coupleId },
-      { toolCallId: "signals-query", messages: [] }
-    );
-
-    const previousResponsesResult = await tools.aiResponsesFromDatabase.execute(
-      { coupleId },
-      { toolCallId: "responses-query", messages: [] }
-    );
+    const [signalsResult, previousResponsesResult] = await Promise.all([
+      tools.signalsFromDatabase.execute(
+        { coupleId },
+        { toolCallId: "signals-query", messages: [] }
+      ),
+      tools.aiResponsesFromDatabase.execute(
+        { coupleId },
+        { toolCallId: "responses-query", messages: [] }
+      )
+    ])
 
     const signals = JSON.parse(signalsResult);
     const previousResponses = JSON.parse(previousResponsesResult);
