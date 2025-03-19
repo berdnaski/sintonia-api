@@ -15,6 +15,10 @@ export class CoupleMetricRecordService {
     return this.repository.create(data)
   }
 
+  async createMany(data: CreateCoupleMetricRecord[]): Promise<void> {
+    return this.repository.createMany(data)
+  }
+
   /**
    * TODO: Move to repository
    */
@@ -27,4 +31,6 @@ export class CoupleMetricRecordService {
       },
     });
   }
+
+
 }

@@ -1,4 +1,4 @@
-import type { AIResponse, CoupleMetric, Signal } from "@prisma/client";
+import type { AIResponse, CoupleMetric, Prisma, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
@@ -9,6 +9,7 @@ import { PrismaAIResponseRepository } from "../../repositories/ai-response-repos
 import { PrismaSignalRepository } from "../../repositories/signal-repository";
 import { CoupleMetricService } from "../coupleMetricService/couple-metric-service";
 import { CoupleMetricRecordService } from "../coupleMetricRecordService/couple-metric-record-service";
+import { CreateCoupleMetricRecord } from "../../interfaces/couple-metric-record.interface";
 
 type generateAnalysisResponse = Either<RequiredParametersError, AIResponse>
 type getAnalysisHistoryResponse = Either<RequiredParametersError, AIResponse[]>
@@ -32,33 +33,36 @@ export class SignalService {
   }
 
   async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {
-    await this.signalRepository.create({ userId, coupleId, emotion, note })
-
     const message = `Emotion: ${emotion}, Note: ${note}`
-    const answer = await AnswerSignalMessage({ message, coupleId })
 
-    const result = await this.IAIResponseRepository.create({
-      ...answer.response,
-      percentage: Number(answer.response.percentage),
-      challenge: answer.response.challenge || undefined,
-    })
+    const [answer] = await Promise.all([
+      AnswerSignalMessage({ message, coupleId }),
+      this.signalRepository.create({ userId, coupleId, emotion, note }),
+    ]);
 
-    const metric = await this.metricService.findByCoupleId(coupleId)
+    const [iaResponse, metric] = await Promise.all([
+      this.IAIResponseRepository.create({
+        ...answer.response,
+        metrics: answer.response.metrics as Prisma.JsonArray,
+        challenge: answer.response.challenge || undefined,
+      }),
+      this.metricService.findByCoupleId(coupleId),
+    ]);
 
     if (metric.isLeft()) {
       return left(metric.value);
     }
 
-    await this.metricRecordService.create({
-      coupleMetricId: metric.value.id,
-      classification: result.classification,
-      level: result.level,
-      percentage: Number(result.percentage)
-    })
+    const metricsMapped = answer.response.metrics.map(item => ({
+      ...item,
+      coupleMetricId: metric.value.id
+    }))
 
-    await this.metricService.calculateAverageMetrics(metric.value)
+    await this.metricRecordService.createMany(metricsMapped as CreateCoupleMetricRecord[])
 
-    return right(result);
+    this.metricService.calculateAverageMetrics(metric.value)
+
+    return right(iaResponse);
   }
 
   async getAnalysisHistory(coupleId: string): Promise<getAnalysisHistoryResponse> {

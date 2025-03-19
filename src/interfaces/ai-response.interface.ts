@@ -1,13 +1,11 @@
-import { AIResponse, CoupleMetricClassification, CoupleMetricLevel } from "@prisma/client";
+import { AIResponse, CoupleMetricClassification, CoupleMetricLevel, Prisma } from "@prisma/client";
 
 export interface ICreateIAResponse {
   coupleId: string;
   summary: string;
   advice: string;
   challenge?: string;
-  level: CoupleMetricLevel | null;
-  classification: CoupleMetricClassification | null,
-  percentage: string | number | null
+  metrics: Prisma.JsonArray
 }
 
 export interface GenerateAnalysisResponse {

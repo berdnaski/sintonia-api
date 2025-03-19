@@ -1,3 +1,9 @@
+/*
+  Warnings:
+
+  - Added the required column `metrics` to the `ai_responses` table without a default value. This is not possible if the table is not empty.
+
+*/
 -- CreateEnum
 CREATE TYPE "CoupleMetricClassification" AS ENUM ('Synchrony', 'Connection', 'Communication', 'Intensity');
 
@@ -5,9 +11,7 @@ CREATE TYPE "CoupleMetricClassification" AS ENUM ('Synchrony', 'Connection', 'Co
 CREATE TYPE "CoupleMetricLevel" AS ENUM ('VeryBad', 'Bad', 'SlightlyBad', 'Neutral', 'SlightlyGood', 'Good', 'VeryGood');
 
 -- AlterTable
-ALTER TABLE "ai_responses" ADD COLUMN     "classification" "CoupleMetricClassification",
-ADD COLUMN     "level" "CoupleMetricLevel",
-ADD COLUMN     "percentage" INTEGER;
+ALTER TABLE "ai_responses" ADD COLUMN     "metrics" JSONB NOT NULL;
 
 -- CreateTable
 CREATE TABLE "couple_metrics" (

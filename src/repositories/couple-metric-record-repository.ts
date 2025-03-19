@@ -1,13 +1,6 @@
-import { CoupleMetricClassification, CoupleMetricRecord, Prisma } from "@prisma/client";
+import { CoupleMetricRecord } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import { CreateCoupleMetricRecord, ICoupleMetricRecordRepository } from "../interfaces/couple-metric-record.interface";
-
-type GroupByClassification = {
-  classification: string;
-  _avg: {
-    percentage: number | null;
-  };
-}
 
 export class PrismaCoupleMetricRecordRepository implements ICoupleMetricRecordRepository {
   async create(record: CreateCoupleMetricRecord): Promise<CoupleMetricRecord> {
@@ -18,5 +11,11 @@ export class PrismaCoupleMetricRecordRepository implements ICoupleMetricRecordRe
     });
 
     return query
+  }
+
+  async createMany(records: CreateCoupleMetricRecord[]): Promise<void> {
+    await prisma.coupleMetricRecord.createMany({
+      data: records
+    });
   }
 }

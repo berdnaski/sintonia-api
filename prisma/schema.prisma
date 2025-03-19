@@ -130,16 +130,14 @@ model Signal {
 }
 
 model AIResponse {
-  id             String                      @id @default(uuid())
-  coupleId       String
-  summary        String
-  advice         String
-  challenge      String?
-  classification CoupleMetricClassification?
-  level          CoupleMetricLevel?
-  percentage     Int?
-  createdAt      DateTime                    @default(now())
-  couple         Couple                      @relation(fields: [coupleId], references: [id])
+  id        String   @id @default(uuid())
+  coupleId  String
+  summary   String
+  advice    String
+  challenge String?
+  metrics   Json
+  createdAt DateTime @default(now())
+  couple    Couple   @relation(fields: [coupleId], references: [id])
 
   @@map("ai_responses")
 }
