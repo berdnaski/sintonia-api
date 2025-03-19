@@ -1,10 +1,11 @@
 import { CoupleMetricLevel } from "@prisma/client";
 
-export const CoupleMetricLevelPercentage: Record<CoupleMetricLevel, { min: number; max: number }> = {
-  [CoupleMetricLevel.VERY_LOW]: { min: 0, max: 20 },
-  [CoupleMetricLevel.LOW]: { min: 0, max: 30 },
-  [CoupleMetricLevel.MODERATE]: { min: 30, max: 50 },
-  [CoupleMetricLevel.HIGH]: { min: 50, max: 80 },
-  [CoupleMetricLevel.VERY_HIGH]: { min: 80, max: 90 },
-  [CoupleMetricLevel.EXTREME]: { min: 90, max: 100 },
-};
+export const CoupleMetricLevelPercentage = {
+  [CoupleMetricLevel.VeryBad]: { min: 70, max: 100, weight: -3 },
+  [CoupleMetricLevel.Bad]: { min: 30, max: 70, weight: -2 },
+  [CoupleMetricLevel.SlightlyBad]: { min: 0, max: 30, weight: -1 },
+  [CoupleMetricLevel.Neutral]: { min: 0, max: 0, weight: 0 },
+  [CoupleMetricLevel.SlightlyGood]: { min: 0, max: 30, weight: 1 },
+  [CoupleMetricLevel.Good]: { min: 30, max: 70, weight: 2 },
+  [CoupleMetricLevel.VeryGood]: { min: 70, max: 100, weight: 3 }
+}

@@ -20,7 +20,7 @@ export class CoupleMetricRecordService {
    */
   async avgByClassification(coupleMetricId: string) {
     return prisma.coupleMetricRecord.groupBy({
-      by: ['classification'],
+      by: ["classification", "level"],
       where: { coupleMetricId },
       _avg: {
         percentage: true,

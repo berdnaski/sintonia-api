@@ -39,6 +39,7 @@ export class SignalService {
 
     const result = await this.IAIResponseRepository.create({
       ...answer.response,
+      percentage: Number(answer.response.percentage),
       challenge: answer.response.challenge || undefined,
     })
 
@@ -52,7 +53,7 @@ export class SignalService {
       coupleMetricId: metric.value.id,
       classification: result.classification,
       level: result.level,
-      percentage: result.percentage
+      percentage: Number(result.percentage)
     })
 
     await this.metricService.calculateAverageMetrics(metric.value)

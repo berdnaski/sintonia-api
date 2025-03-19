@@ -30,12 +30,13 @@ enum CoupleMetricClassification {
 }
 
 enum CoupleMetricLevel {
-  VERY_LOW
-  LOW
-  MODERATE
-  HIGH
-  VERY_HIGH
-  EXTREME
+  VeryBad
+  Bad
+  SlightlyBad
+  Neutral
+  SlightlyGood
+  Good
+  VeryGood
 }
 
 model User {
