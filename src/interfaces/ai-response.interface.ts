@@ -4,14 +4,12 @@ export interface ICreateIAResponse {
   coupleId: string;
   summary: string;
   advice: string;
-  challenge?: string;
   signalId?: string;
 }
 
 export interface GenerateAnalysisResponse {
   summary: string;
   advice: string;
-  challenge?: string;
 };
 
 export interface IAIResponseRepository {

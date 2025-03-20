@@ -88,8 +88,7 @@ Instruções:
 - Ajuste o tom: leve e brincalhão se estiver tudo bem, ou mais empático se for algo sério.
 - Dê conselhos práticos e úteis em todas as respostas. Sugira ações concretas que o casal possa tomar em vez de depender só de perguntas.
 - Você pode incluir até 2 perguntas reflexivas por resposta, mas só se forem realmente úteis para o diálogo. Não coloque perguntas em todas as respostas.
-- A cada 7 dias, sugira um desafio simples; fora isso, deixe "challenge" vazio ("").
-- Responda só em JSON, com "summary", "advice" e "challenge", até 500 caracteres por campo.
+- Responda só em JSON, com "summary", "advice", até 500 caracteres por campo.
 - Sem quebras de linha ou extras fora do JSON, mas capriche na naturalidade dentro dele!
 `,
       system: `
@@ -98,8 +97,7 @@ REGRAS:
 - Use "você", "seu", "sua" – papo direto e próximo.
 - Dê conselhos práticos em todas as respostas, como ideias ou sugestões úteis.
 - Só inclua perguntas reflexivas se for útil ou um estímulo para o diálogo. Evite perguntas em todas as respostas e muitas perguntas em uma resposta(max 2 perguntas por resposta)!
-- A cada 7 dias, sugira um desafio; senão, "challenge" fica vazio ("").
-- Responda só em JSON, com "summary", "advice" e "challenge", até 500 caracteres por campo.
+- Responda só em JSON, com "summary", "advice", até 500 caracteres por campo.
 - Sem extras fora do JSON, mas seja humano e natural dentro dele!
 `,
       maxTokens: 250
@@ -112,7 +110,6 @@ REGRAS:
           summary: "Modelo indisponível",
           advice: "Tente novamente em alguns minutos",
           progress: null,
-          challenge: null
         }
       };
     }
@@ -137,7 +134,6 @@ REGRAS:
       const summaryMatch = cleanText.match(/"summary"\s*:\s*"([^"]+)"/);
       const adviceMatch = cleanText.match(/"advice"\s*:\s*"([^"]+)"/);
       const progressMatch = cleanText.match(/"progress"\s*:\s*"([^"]+)"/);
-      const challengeMatch = cleanText.match(/"challenge"\s*:\s*"([^"]*)"/);
 
       if (!summaryMatch || !adviceMatch) {
         throw new Error('Missing required fields');
@@ -147,7 +143,6 @@ REGRAS:
         summary: summaryMatch[1].substring(0, 500),
         advice: adviceMatch[1].substring(0, 500),
         progress: progressMatch?.[1].substring(0, 500),
-        challenge: challengeMatch?.[1].substring(0, 500)
       };
 
       return {
@@ -164,7 +159,6 @@ REGRAS:
           summary: `Erro de processamento: ${e.message}`,
           advice: `Erro ao processar JSON: ${answer.text}`,
           progress: null,
-          challenge: null
         }
       };
     }
@@ -177,7 +171,6 @@ REGRAS:
         summary: "Erro na análise",
         advice: "Tente novamente mais tarde",
         progress: null,
-        challenge: null
       }
     };
   }
