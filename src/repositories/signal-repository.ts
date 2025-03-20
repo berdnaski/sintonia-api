@@ -67,6 +67,7 @@ export class PrismaSignalRepository implements ISignalRepository {
         coupleId: signal.coupleId,
         emotion: signal.emotion,
         note: signal.note,
+        createdAt: signal.createdAt,
       }
     }) as unknown as Signal[];
   }
