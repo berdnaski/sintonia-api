@@ -10,7 +10,7 @@ export class PrismaAIResponseRepository implements IAIResponseRepository {
   }
 
 
-  findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]> {
+  async findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]> {
     return prisma.aIResponse.findMany({
       where: { coupleId },
       orderBy: { createdAt: "desc" },

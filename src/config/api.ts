@@ -6,5 +6,6 @@ export const sintoniaConfig = {
   frontend: process.env.FRONTEND_URL,
   jobs: {
     daily_questions: '56 15 * * *' as string,
-  },  
+    weekly_challenges: '43 17 * * *' as string
+  },
 };

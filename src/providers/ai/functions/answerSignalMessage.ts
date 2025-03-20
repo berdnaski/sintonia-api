@@ -93,17 +93,14 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
         - Ajuste o tom: leve e brincalhão se estiver tudo bem, ou mais empático se for algo sério.
         - Dê conselhos práticos e úteis em todas as respostas. Sugira ações concretas que o casal possa tomar em vez de depender só de perguntas.
         - Você pode incluir até 2 perguntas reflexivas por resposta, mas só se forem realmente úteis para o diálogo. Não coloque perguntas em todas as respostas.
-        - A cada 7 dias, sugira um desafio simples; fora isso, deixe "challenge" vazio ("").
-        - Responda só em JSON, com "summary", "advice" e "challenge", até 500 caracteres por campo.
-        - Sem quebras de linha ou extras fora do JSON, mas capriche na naturalidade dentro dele!
         - Classifique a mensagem com um ou mais campos do json JSON_CLASSIFICACOES e de um nivel para ele de acordo a mensagem e a porcetagem do json JSON_LEVELS (campo "metrics")
-        - Responda APENAS em formato JSON válido, utilizando os campos "summary", "advice", "challenge" e "metrics".
+        - Sem quebras de linha ou extras fora do JSON, mas capriche na naturalidade dentro dele!
+        - Responda só em JSON, com "summary", "advice" e "metrics", até 500 caracteres por campo.
 
         Formato exato da resposta:
         {
           "summary": "[máximo 500 caracteres]",
           "advice":"[máximo 500 caracteres com 2 perguntas reflexivas]",
-          "challenge":"[desafio semanal ou string vazia]",
           "metrics": "[array com um ou mais items classificados seguindo o seguinte formato {
             "classification": [string com um dos campos de classificação fornecidos],
             "level": "[string com um dos levels fornecidos]",
@@ -117,8 +114,7 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
         - Use "você", "seu", "sua" – papo direto e próximo.
         - Dê conselhos práticos em todas as respostas, como ideias ou sugestões úteis.
         - Só inclua perguntas reflexivas se for útil ou um estímulo para o diálogo. Evite perguntas em todas as respostas e muitas perguntas em uma resposta(max 2 perguntas por resposta)!
-        - A cada 7 dias, sugira um desafio; senão, "challenge" fica vazio ("").
-        - Responda só em JSON, com "summary", "advice", "challenge" e "metrics", até 500 caracteres por campo.
+        - Responda só em JSON, com "summary", "advice" e "metrics", até 500 caracteres por campo.
         - Sem extras fora do JSON, mas seja humano e natural dentro dele!
       `,
       maxTokens: 250
@@ -130,7 +126,6 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
           coupleId,
           summary: "Modelo indisponível",
           advice: "Tente novamente em alguns minutos",
-          challenge: null,
           metrics: null
         }
       };
@@ -152,7 +147,6 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
     const iaResponseSchema = z.object({
       summary: z.string(),
       advice: z.string(),
-      challenge: z.string().optional(),
       metrics: z.array(z.object({
         classification: z.nativeEnum(CoupleMetricClassification),
         level: z.nativeEnum(CoupleMetricLevel),
@@ -173,7 +167,6 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
         coupleId,
         summary: result.data.summary,
         advice: result.data.advice,
-        challenge: result.data.challenge,
         metrics: result.data.metrics,
       }
     };
@@ -186,7 +179,6 @@ export async function AnswerSignalMessage({ message, coupleId }: AnswerSignalMes
         coupleId,
         summary: "Erro na análise",
         advice: "Tente novamente mais tarde",
-        challenge: null,
         metrics: null
       }
     };

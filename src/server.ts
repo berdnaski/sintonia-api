@@ -1,19 +1,21 @@
 import fastifyCors from '@fastify/cors';
 import fastifyFormbody from '@fastify/formbody';
 import 'dotenv/config';
-import { fastify, FastifyRequest, type FastifyInstance } from "fastify";
+import { fastify, type FastifyInstance } from "fastify";
 import fastifyJwt from "fastify-jwt";
 import fastifyRawBody from 'fastify-raw-body';
 import { JobDailyQuestion } from './jobs/daily-question';
+import { JobWeeklyChallenge } from './jobs/weekly-challenge';
 import { errorHandler } from './middlewares/error-handler';
 import { authRoutes } from './routes/authRoutes';
+import { challengeRoutes } from './routes/challenge-routes';
 import { checkoutRoutes } from './routes/checkoutRoutes';
 import { coupleInviteRoutes } from './routes/couple-invite-routes';
 import { coupleRoutes } from './routes/coupleRoutes';
+import { questionsRoutes } from './routes/question-routes';
 import { signalRoutes } from './routes/signalRoutes';
 import { userRoutes } from './routes/userRoutes';
 import { webhookRoutes } from './routes/webhookRoutes';
-import { questionsRoutes } from './routes/question-routes';
 
 const app: FastifyInstance = fastify();
 
@@ -41,9 +43,12 @@ app.register(coupleRoutes);
 app.register(signalRoutes);
 app.register(webhookRoutes, { prefix: 'data' });
 app.register(questionsRoutes)
+app.register(challengeRoutes)
 
 const dailyQuestionJob = new JobDailyQuestion(app);
+const jobWeeklyChallenge = new JobWeeklyChallenge(app);
 dailyQuestionJob.start();
+jobWeeklyChallenge.start();
 
 const PORT = Number(process.env.PORT) || 3000;
 app.listen({ port: PORT }, () => console.log(`listening on port ${PORT}`));

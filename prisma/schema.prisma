@@ -39,6 +39,12 @@ enum CoupleMetricLevel {
   VeryGood
 }
 
+enum ChallengeTypeAnswer {
+  Unsuccessfully
+  Pending
+  Completed
+}
+
 model User {
   id                       String         @id @default(uuid())
   name                     String
@@ -59,6 +65,7 @@ model User {
   invites                  CoupleInvite[] @relation("Inviter")
   Memory                   Memory[]
   Questions                Question[]
+  Challenge                Challenge[]
 
   @@map("users")
 }
@@ -137,13 +144,24 @@ model AIResponse {
   signalId  String?
   summary   String
   advice    String
-  challenge String?
   metrics   Json
   createdAt DateTime @default(now())
   couple    Couple   @relation(fields: [coupleId], references: [id])
   signal    Signal?  @relation(fields: [signalId], references: [id])
 
   @@map("ai_responses")
+}
+
+model Challenge {
+  id        String              @id @default(uuid())
+  coupleId  String
+  userId    String
+  challenge String
+  answer    ChallengeTypeAnswer @default(Pending)
+  createdAt DateTime            @default(now())
+  User      User                @relation(fields: [userId], references: [id])
+
+  @@map("challenges")
 }
 
 model Question {

@@ -4,7 +4,6 @@ export interface ICreateIAResponse {
   coupleId: string;
   summary: string;
   advice: string;
-  challenge?: string;
   metrics: Prisma.JsonArray
   signalId?: string;
 }
@@ -12,7 +11,6 @@ export interface ICreateIAResponse {
 export interface GenerateAnalysisResponse {
   summary: string;
   advice: string;
-  challenge?: string;
 };
 
 export interface IAIResponseRepository {

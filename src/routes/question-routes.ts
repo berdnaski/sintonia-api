@@ -18,7 +18,7 @@ export async function questionsRoutes(app: FastifyInstance) {
     await questionController.findOne(req, reply);
   });
 
-  app.get<{ Params: { userId: string } }>('/questions/all', async (req, reply) => {
+  app.get<{ Params: { userId: string } }>('/questions/all/:userId', async (req, reply) => {
     await questionController.findAll(req, reply);
   });
 }

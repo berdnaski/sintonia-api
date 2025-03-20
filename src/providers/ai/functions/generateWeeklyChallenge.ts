@@ -4,8 +4,9 @@ import { deepseek } from "..";
 import { PrismaAIResponseRepository } from "../../../repositories/ai-response-repository";
 import { PrismaQuestionRepository } from "../../../repositories/question-repository";
 import { PrismaSignalRepository } from "../../../repositories/signal-repository";
+import { PrismaChallengeRepository } from "../../../repositories/challenge-repository";
 
-interface DailyQuestionParams {
+interface WeeklyChallengeParams {
   coupleId: string;
   userId: string;
 }
@@ -70,9 +71,29 @@ const tools = {
       }
     }
   }),
+
+  challengesFromDatabase: tool({
+    description: `
+      Realiza uma query no banco Postgres para buscar informações da tabela "challenges" do banco de dados.
+      Só pode realizar operações de busca (SELECT), não é permitido a geração de qualquer outra operação.
+    `.trim(),
+    parameters: z.object({
+      coupleId: z.string()
+    }),
+    execute: async ({ coupleId }) => {
+      const challengeRepository = new PrismaChallengeRepository();
+      try {
+        const questions = await challengeRepository.findOne(coupleId);
+        return JSON.stringify(questions);
+      } catch (error) {
+        console.error("Erro ao buscar desafios:", error);
+        throw new Error("Erro ao buscar desafios do banco de dados");
+      }
+    }
+  }),
 };
 
-export async function GenerateDailyQuestion({ coupleId, userId }: DailyQuestionParams) {
+export async function GenerateWeeklyChallenge({ coupleId, userId }: WeeklyChallengeParams) {
   try {
     const signalsResult = await tools.signalsFromDatabase.execute(
       { coupleId },
@@ -89,9 +110,15 @@ export async function GenerateDailyQuestion({ coupleId, userId }: DailyQuestionP
       { toolCallId: "questions-query", messages: [] }
     );
 
+    const challengesResult = await tools.challengesFromDatabase.execute(
+      { coupleId },
+      { toolCallId: "challenges-query", messages: [] }
+    );
+
     const signals = JSON.parse(signalsResult);
     const previousResponses = JSON.parse(previousResponsesResult);
     const questions = JSON.parse(questionsResult);
+    const challenges = JSON.parse(challengesResult);
 
     const interactionHistory = previousResponses.map((response: any) => ({
       summary: response.summary,
@@ -102,32 +129,33 @@ export async function GenerateDailyQuestion({ coupleId, userId }: DailyQuestionP
     const answer = await generateText({
       model: deepseek,
       prompt: `
-Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar uma única pergunta reflexiva para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
+Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar um único desafio semanal para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
 
 Dados:
 Histórico de interações: ${JSON.stringify(interactionHistory)}
 Sinais recentes: ${JSON.stringify(signals)}
 Perguntas e respostas anteriores: ${JSON.stringify(questions)}
+Desafios e respostas anteriores: ${JSON.stringify(challenges)}
 
 Instruções:
 - Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
-- Gere APENAS uma pergunta reflexiva que não tenha sido feita anteriormente.
-- A pergunta deve ser relevante para o contexto do relacionamento do casal.
-- Não repita perguntas que já foram feitas anteriormente.
-- Responda em formato JSON com um único campo "question" contendo a pergunta.
-- A pergunta deve ter no máximo 100 caracteres.
+- Gere APENAS um desafio semanal que não tenha sido proposto anteriormente.
+- O desafio deve ser relevante para o contexto do relacionamento do casal.
+- Não repita desafios que já foram propostos anteriormente.
+- Responda em formato JSON com um único campo "challenge" contendo o desafio.
+- O desafio deve ter no máximo 100 caracteres.
 - NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
 `,
       system: `
-Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar perguntas reflexivas únicas e relevantes para o casal, com base nos dados fornecidos.
+Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar desafios semanais únicos e relevantes para o casal, com base nos dados fornecidos.
 REGRAS IMPORTANTES:
 - Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
-- Gere apenas uma pergunta por vez.
-- Gere uma pergunta diferente para cada usuário.
-- Não repita perguntas que já foram feitas anteriormente.
-- A pergunta deve ser direta e promover a reflexão sobre o relacionamento.
-- Responda sempre em formato JSON com o campo "question".
-- Mantenha a pergunta curta e objetiva.
+- Gere apenas um desafio por vez.
+- Gere um desafio diferente para cada usuário.
+- Não repita desafios que já foram propostos anteriormente.
+- O desafio deve ser direto e promover a ação ou reflexão sobre o relacionamento.
+- Responda sempre em formato JSON com o campo "challenge".
+- Mantenha o desafio curto e objetivo.
 - NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
 - SEMPRE feche todas as aspas e chaves corretamente.
 `,
@@ -138,23 +166,23 @@ REGRAS IMPORTANTES:
       return {
         response: {
           coupleId,
-          question: "Modelo indisponível. Tente novamente."
+          challenge: "Modelo indisponível. Tente novamente."
         }
       };
     }
 
     try {
       const responseJson = JSON.parse(answer.text);
-      const question = responseJson.question;
+      const challenge = responseJson.challenge;
 
-      if (!question) {
-        throw new Error('Campo "question" não encontrado na resposta');
+      if (!challenge) {
+        throw new Error('Campo "challenge" não encontrado na resposta');
       }
 
       return {
         response: {
           coupleId,
-          question: question.substring(0, 100)
+          challenge: challenge.substring(0, 100)
         }
       };
     } catch (e) {
@@ -162,7 +190,7 @@ REGRAS IMPORTANTES:
       return {
         response: {
           coupleId,
-          question: "Erro ao gerar pergunta. Tente novamente."
+          challenge: "Erro ao gerar desafio. Tente novamente."
         }
       };
     }
@@ -171,7 +199,7 @@ REGRAS IMPORTANTES:
     return {
       response: {
         coupleId,
-        question: "Erro na análise. Tente novamente mais tarde."
+        challenge: "Erro na análise. Tente novamente mais tarde."
       }
     };
   }
