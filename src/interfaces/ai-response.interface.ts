@@ -1,4 +1,4 @@
-import { AIResponse, CoupleMetricClassification, CoupleMetricLevel, Prisma } from "@prisma/client";
+import { AIResponse, Prisma } from "@prisma/client";
 
 export interface ICreateIAResponse {
   coupleId: string;
@@ -6,6 +6,7 @@ export interface ICreateIAResponse {
   advice: string;
   challenge?: string;
   metrics: Prisma.JsonArray
+  signalId?: string;
 }
 
 export interface GenerateAnalysisResponse {
@@ -16,6 +17,6 @@ export interface GenerateAnalysisResponse {
 
 export interface IAIResponseRepository {
   create(ai: ICreateIAResponse): Promise<AIResponse>
-  findByCoupleId(coupleId: string): Promise<AIResponse[]>;
+  findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]>;
   findAll(): Promise<AIResponse[]>
 }

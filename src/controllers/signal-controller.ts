@@ -32,6 +32,19 @@ export class SignalController {
     return reply.status(201).send(result.value);
   }
 
+  async findAIResponsesByCoupleId(req: FastifyRequest<{ Params: { coupleId: string }, Querystring: { limit?: number } }>, reply: FastifyReply) {
+    const { coupleId } = req.params;
+    const { limit = 3 } = req.query; 
+    const aiResponsesResult = await this.signalService.getAnalysisHistory(coupleId, limit);
+  
+    if (aiResponsesResult.isLeft()) {
+      const error = aiResponsesResult.value;
+      return reply.status(400).send({ message: error.message });
+    }
+  
+    return reply.status(200).send(aiResponsesResult.value);
+  }
+
   async save(req: FastifyRequest<{ Params: { id: string }; Body: ISignalUpdate }>, reply: FastifyReply) {
     const { id } = req.params;
     const updatedData = req.body;

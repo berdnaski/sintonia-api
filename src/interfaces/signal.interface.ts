@@ -8,6 +8,7 @@ export interface ISignal {
   coupleId: string;
   emotion: string;
   note: string | null;
+  createdAt: Date;
 }
 
 export interface ICreateSignal {

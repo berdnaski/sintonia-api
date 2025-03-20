@@ -29,4 +29,8 @@ export async function signalRoutes(app: FastifyInstance) {
   app.delete<{ Params: { id: string } }>('/signals/:id', async (req, reply) => {
     await signalController.remove(req, reply);
   });
+
+  app.get<{ Params: { coupleId: string }, Querystring: { limit?: number } }>('/ai-responses/:coupleId', async (req, reply) => {
+    await signalController.findAIResponsesByCoupleId(req, reply);
+  });
 }

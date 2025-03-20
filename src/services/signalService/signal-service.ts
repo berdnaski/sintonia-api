@@ -1,4 +1,4 @@
-import type { AIResponse, CoupleMetric, Prisma, Signal } from "@prisma/client";
+import type { AIResponse, Prisma, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
@@ -35,7 +35,7 @@ export class SignalService {
   async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {
     const message = `Emotion: ${emotion}, Note: ${note}`
 
-    const [answer] = await Promise.all([
+    const [answer, signal] = await Promise.all([
       AnswerSignalMessage({ message, coupleId }),
       this.signalRepository.create({ userId, coupleId, emotion, note }),
     ]);
@@ -43,6 +43,7 @@ export class SignalService {
     const [iaResponse, metric] = await Promise.all([
       this.IAIResponseRepository.create({
         ...answer.response,
+        signalId: signal.id,
         metrics: answer.response.metrics as Prisma.JsonArray,
         challenge: answer.response.challenge || undefined,
       }),
@@ -65,9 +66,16 @@ export class SignalService {
     return right(iaResponse);
   }
 
-  async getAnalysisHistory(coupleId: string): Promise<getAnalysisHistoryResponse> {
-    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId)
-    return right(answer)
+
+  async getAnalysisHistory(coupleId: string, limit: number = 3): Promise<getAnalysisHistoryResponse> {
+    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId, limit);
+
+    return right(answer);
+  }
+
+  async getAllAIResponses(): Promise<getAnalysisHistoryResponse> {
+    const aiResponses = await this.IAIResponseRepository.findAll();
+    return right(aiResponses);
   }
 
   async save(id: string, updateData: ISignalUpdate): Promise<saveSignalResponse> {
