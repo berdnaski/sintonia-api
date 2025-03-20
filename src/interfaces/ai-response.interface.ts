@@ -1,9 +1,10 @@
-import { AIResponse } from "@prisma/client";
+import { AIResponse, Prisma } from "@prisma/client";
 
 export interface ICreateIAResponse {
   coupleId: string;
   summary: string;
   advice: string;
+  metrics: Prisma.JsonArray
   signalId?: string;
 }
 

@@ -13,6 +13,7 @@ export class SignalController {
     const { userId, coupleId, emotion, note } = req.body;
 
     const validateBody = CreateSignal.safeParse({ userId, coupleId, emotion, note });
+
     if (!validateBody.success) {
       const errors = validateBody.error.flatten().fieldErrors
       return reply.status(400).send({

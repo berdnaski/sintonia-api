@@ -22,6 +22,23 @@ enum StatusPlan {
   Canceled
 }
 
+enum CoupleMetricClassification {
+  Synchrony
+  Connection
+  Communication
+  Intensity
+}
+
+enum CoupleMetricLevel {
+  VeryBad
+  Bad
+  SlightlyBad
+  Neutral
+  SlightlyGood
+  Good
+  VeryGood
+}
+
 enum ChallengeTypeAnswer {
   Unsuccessfully
   Pending
@@ -54,18 +71,44 @@ model User {
 }
 
 model Couple {
-  id                 String       @id @default(uuid())
+  id                 String         @id @default(uuid())
   relationshipStatus String
-  user1              User         @relation("CoupleUser1", fields: [user1Id], references: [id])
-  user1Id            String       @unique
-  user2              User         @relation("CoupleUser2", fields: [user2Id], references: [id])
-  user2Id            String       @unique
-  createdAt          DateTime     @default(now())
-  signals            Signal[]     @relation
-  aiResponses        AIResponse[] @relation
+  user1              User           @relation("CoupleUser1", fields: [user1Id], references: [id])
+  user1Id            String         @unique
+  user2              User           @relation("CoupleUser2", fields: [user2Id], references: [id])
+  user2Id            String         @unique
+  createdAt          DateTime       @default(now())
+  signals            Signal[]       @relation
+  aiResponses        AIResponse[]   @relation
   Memory             Memory[]
+  CoupleMetric       CoupleMetric[]
 
   @@map("couples")
+}
+
+model CoupleMetric {
+  id                  String               @id @default(uuid())
+  coupleId            String
+  couple              Couple               @relation(fields: [coupleId], references: [id])
+  synchrony           Int
+  connection          Int
+  communication       Int
+  intensity           Int
+  CoupleMetricRecords CoupleMetricRecord[]
+
+  @@map("couple_metrics")
+}
+
+model CoupleMetricRecord {
+  id             String                     @id @default(uuid())
+  coupleMetricId String
+  coupleMetric   CoupleMetric               @relation(fields: [coupleMetricId], references: [id])
+  classification CoupleMetricClassification
+  level          CoupleMetricLevel
+  percentage     Int
+  createdAt      DateTime                   @default(now())
+
+  @@map("couple_metric_records")
 }
 
 model CoupleInvite {
@@ -101,6 +144,7 @@ model AIResponse {
   signalId  String?
   summary   String
   advice    String
+  metrics   Json
   createdAt DateTime @default(now())
   couple    Couple   @relation(fields: [coupleId], references: [id])
   signal    Signal?  @relation(fields: [signalId], references: [id])

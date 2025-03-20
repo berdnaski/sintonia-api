@@ -59,8 +59,6 @@ export class PrismaCoupleRepository implements ICoupleRepository {
     ]);
   }
 
-
-
   async createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite> {
     return prisma.coupleInvite.create({
       data: {

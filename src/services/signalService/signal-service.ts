@@ -1,12 +1,15 @@
-import type { AIResponse, Signal } from "@prisma/client";
+import type { AIResponse, Prisma, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
-import { IAIResponseRepository, type GenerateAnalysisResponse } from "../../interfaces/ai-response.interface";
+import { IAIResponseRepository } from "../../interfaces/ai-response.interface";
 import type { ISignalRepository, ISignalUpdate } from "../../interfaces/signal.interface";
 import { AnswerSignalMessage } from "../../providers/ai/functions/answerSignalMessage";
 import { PrismaAIResponseRepository } from "../../repositories/ai-response-repository";
 import { PrismaSignalRepository } from "../../repositories/signal-repository";
+import { CoupleMetricService } from "../coupleMetricService/couple-metric-service";
+import { CoupleMetricRecordService } from "../coupleMetricRecordService/couple-metric-record-service";
+import { CreateCoupleMetricRecord } from "../../interfaces/couple-metric-record.interface";
 
 type generateAnalysisResponse = Either<RequiredParametersError, AIResponse>
 type getAnalysisHistoryResponse = Either<RequiredParametersError, AIResponse[]>
@@ -19,33 +22,54 @@ type removeSignalResponse = Either<RequiredParametersError, Signal>;
 export class SignalService {
   private signalRepository: ISignalRepository;
   private IAIResponseRepository: IAIResponseRepository
+  private metricService: CoupleMetricService
+  private metricRecordService: CoupleMetricRecordService
 
   constructor(fastify: FastifyInstance) {
     this.signalRepository = new PrismaSignalRepository();
-    this.IAIResponseRepository = new PrismaAIResponseRepository()
+    this.IAIResponseRepository = new PrismaAIResponseRepository();
+    this.metricService = new CoupleMetricService(fastify)
+    this.metricRecordService = new CoupleMetricRecordService(fastify)
   }
 
   async generateAnalysis(userId: string, coupleId: string, emotion: string, note: string): Promise<generateAnalysisResponse> {
-    const signal = await this.signalRepository.create({ userId, coupleId, emotion, note });
+    const message = `Emotion: ${emotion}, Note: ${note}`
 
-    const message = `Emotion: ${emotion}, Note: ${note}`;
-    const answer = await AnswerSignalMessage({ message, coupleId });
+    const [answer, signal] = await Promise.all([
+      AnswerSignalMessage({ message, coupleId }),
+      this.signalRepository.create({ userId, coupleId, emotion, note }),
+    ]);
 
-    const result = await this.IAIResponseRepository.create({
-      coupleId,
-      summary: answer.response.summary,
-      advice: answer.response.advice,
-      challenge: answer.response.challenge || undefined,
-      signalId: signal.id,
-    });
-  
-    return right(result);
+    const [iaResponse, metric] = await Promise.all([
+      this.IAIResponseRepository.create({
+        ...answer.response,
+        signalId: signal.id,
+        metrics: answer.response.metrics as Prisma.JsonArray,
+        challenge: answer.response.challenge || undefined,
+      }),
+      this.metricService.findByCoupleId(coupleId),
+    ]);
+
+    if (metric.isLeft()) {
+      return left(metric.value);
+    }
+
+    const metricsMapped = answer.response.metrics.map(item => ({
+      ...item,
+      coupleMetricId: metric.value.id
+    }))
+
+    await this.metricRecordService.createMany(metricsMapped as CreateCoupleMetricRecord[])
+
+    this.metricService.calculateAverageMetrics(metric.value)
+
+    return right(iaResponse);
   }
-  
+
 
   async getAnalysisHistory(coupleId: string, limit: number = 3): Promise<getAnalysisHistoryResponse> {
     const answer = await this.IAIResponseRepository.findByCoupleId(coupleId, limit);
-  
+
     return right(answer);
   }
 

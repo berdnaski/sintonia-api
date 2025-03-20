@@ -5,15 +5,10 @@ import { IAIResponseRepository, ICreateIAResponse } from "../interfaces/ai-respo
 export class PrismaAIResponseRepository implements IAIResponseRepository {
   async create(data: ICreateIAResponse): Promise<AIResponse> {
     return prisma.aIResponse.create({
-      data: {
-        coupleId: data.coupleId,
-        summary: data.summary,
-        advice: data.advice,
-        signalId: data.signalId, 
-      },
+      data,
     });
   }
-  
+
 
   async findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]> {
     return prisma.aIResponse.findMany({
