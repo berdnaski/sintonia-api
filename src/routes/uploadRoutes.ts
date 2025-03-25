@@ -14,29 +14,23 @@ export async function uploadRoutes(app: FastifyInstance) {~
   app.addHook("onRequest", CheckSubscription);
 
   app.post('/uploads', async (request) => {
-    const uploadBodySchema = z.object({
-      name: z.string().min(1),
-      contentType: z.string().regex(/\w+\/[-+.\w]+/)
-    });
+    const data = await request.file();
 
-    const { name, contentType } = uploadBodySchema.parse(request.body);
-    const allowedTypes = ['video/mp4', 'image/jpeg', 'image/png', 'image/jpg'];
+    const buffer = await data.toBuffer();
 
-    if (!allowedTypes.includes(contentType)) {
-      throw new Error('File type not supported');
-    }
+    const name = data.filename
+    const contentType = data.mimetype
 
     const fileKey = randomUUID().concat('-').concat(name);
 
-    const signedUrl = await getSignedUrl(
-      r2,
-      new PutObjectCommand({
-        Bucket: 'sintonia',
-        Key: fileKey,
-        ContentType: contentType, 
-      }),
-      { expiresIn: 600 },
-    )
+    const command = new PutObjectCommand({
+      Bucket: 'sintonia',
+      Key: fileKey,
+      Body: buffer,
+      ContentType: contentType,
+    });
+
+    await r2.send(command)
 
     const file = await prisma.file.create({
       data: {
@@ -45,6 +39,15 @@ export async function uploadRoutes(app: FastifyInstance) {~
         key: fileKey
       }
     })
+
+    const signedUrl = await getSignedUrl(
+      r2,
+      new GetObjectCommand({
+        Bucket: 'sintonia',
+        Key: file.key,
+      }),
+      { expiresIn: 600 },
+    )
 
     return { signedUrl, fileId: file.id };
   })
@@ -62,12 +65,14 @@ export async function uploadRoutes(app: FastifyInstance) {~
       }
     })
 
+    const command = new GetObjectCommand({
+      Bucket: 'sintonia',
+      Key: file.key,
+    })
+
     const signedUrl = await getSignedUrl(
       r2,
-      new GetObjectCommand({
-        Bucket: 'sintonia',
-        Key: file.key,
-      }),
+      command,
       { expiresIn: 600 },
     )
 

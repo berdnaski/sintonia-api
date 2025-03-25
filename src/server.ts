@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { fastify, type FastifyInstance } from "fastify";
 import fastifyJwt from "fastify-jwt";
 import fastifyRawBody from 'fastify-raw-body';
+import fastifyMultipart from '@fastify/multipart';
 import { JobDailyQuestion } from './jobs/daily-question';
 import { JobWeeklyChallenge } from './jobs/weekly-challenge';
 import { errorHandler } from './middlewares/error-handler';
@@ -30,7 +31,11 @@ app.register(fastifyJwt, {
 app.setErrorHandler(errorHandler);
 app.register(fastifyCors);
 app.register(fastifyFormbody);
-
+app.register(fastifyMultipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+});
 app.register(fastifyRawBody, {
   field: 'rawBody',
   encoding: 'utf-8',
