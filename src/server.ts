@@ -4,6 +4,7 @@ import 'dotenv/config';
 import { fastify, type FastifyInstance } from "fastify";
 import fastifyJwt from "fastify-jwt";
 import fastifyRawBody from 'fastify-raw-body';
+import fastifyMultipart from '@fastify/multipart';
 import { JobDailyQuestion } from './jobs/daily-question';
 import { JobWeeklyChallenge } from './jobs/weekly-challenge';
 import { errorHandler } from './middlewares/error-handler';
@@ -16,6 +17,7 @@ import { questionsRoutes } from './routes/question-routes';
 import { signalRoutes } from './routes/signalRoutes';
 import { userRoutes } from './routes/userRoutes';
 import { webhookRoutes } from './routes/webhookRoutes';
+import { uploadRoutes } from './routes/uploadRoutes';
 
 const app: FastifyInstance = fastify();
 
@@ -29,7 +31,11 @@ app.register(fastifyJwt, {
 app.setErrorHandler(errorHandler);
 app.register(fastifyCors);
 app.register(fastifyFormbody);
-
+app.register(fastifyMultipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB
+  },
+});
 app.register(fastifyRawBody, {
   field: 'rawBody',
   encoding: 'utf-8',
@@ -41,6 +47,7 @@ app.register(checkoutRoutes);
 app.register(coupleInviteRoutes);
 app.register(coupleRoutes);
 app.register(signalRoutes);
+app.register(uploadRoutes);
 app.register(webhookRoutes, { prefix: 'data' });
 app.register(questionsRoutes)
 app.register(challengeRoutes)
