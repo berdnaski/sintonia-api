@@ -7,16 +7,21 @@ import { RecoveryMailTemplate } from "../providers/mail/templates/RecoveryEmailT
 import { TokensService } from "../services/tokenService/token.service";
 import { UserService } from "../services/userService/user.service";
 import { hashPassword } from "../utils/hash";
+import { R2StorageProvider } from "../providers/storage/implementations/r2-storage-provider";
+import { StorageProvider } from "../providers/storage/storage-provider";
+import { r2 } from "../lib/cloudflare";
 
 export class UserController {
   private userService: UserService;
   private tokenService: TokensService;
   private mailProvider: MailProvider;
+  private storageProvider: StorageProvider;
 
   constructor(app: FastifyInstance) {
     this.userService = new UserService(app);
     this.tokenService = new TokensService();
     this.mailProvider = new MailProvider();
+    this.storageProvider = new R2StorageProvider();
   }
 
   async sendRecoveryEmail(req: FastifyRequest<{ Params: { email: string } }>, reply: FastifyReply) {
@@ -145,11 +150,21 @@ export class UserController {
     const updatedData = req.body;
 
     const updateResult = await this.userService.save(id, updatedData);
+
     if (updateResult.isLeft()) {
       return reply.status(400).send({ message: "Failed to update user." });
     }
 
-    return reply.status(200).send(updateResult.value);
+    let avatarUrl = updateResult.value.avatarUrl;
+
+    if (avatarUrl) {
+      avatarUrl = await this.storageProvider.getUrl(updatedData.avatarUrl);
+    }
+
+    return reply.status(200).send({
+      ...updateResult.value,
+      avatarUrl
+    });
   }
 
   async me(req: FastifyRequest, reply: FastifyReply) {
@@ -173,6 +188,15 @@ export class UserController {
       });
     }
 
-    return reply.status(200).send(user.value);
+    let avatarUrl = user.value.avatarUrl;
+
+    if (avatarUrl) {
+      avatarUrl = await this.storageProvider.getUrl(user.value.avatarUrl);
+    }
+
+    return reply.status(200).send({
+      ...user.value,
+      avatarUrl
+    });
   }
 }
