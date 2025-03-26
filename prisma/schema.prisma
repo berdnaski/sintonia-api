@@ -212,11 +212,3 @@ model Memory {
 
   @@map("memories")
 }
-
-model File {
-  id String @id @default(cuid())
-  name String
-  key String
-  contentType String
-  createdAt DateTime @default(now())
-}
