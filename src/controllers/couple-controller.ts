@@ -3,14 +3,15 @@ import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { CreateCoupleInvite } from '../interfaces/couple.interface';
 import { CoupleInviteService } from '../services/coupleInvitesService/couple-invites.service';
 import { CoupleService } from '../services/coupleService/couple-service';
+import { CoupleMetricService } from '../services/coupleMetricService/couple-metric-service';
 
 export class CoupleController {
   private coupleService: CoupleService;
-  private coupleInviteService: CoupleInviteService;
+  private metricService: CoupleMetricService;
 
   constructor(app: FastifyInstance) {
     this.coupleService = new CoupleService(app);
-    this.coupleInviteService = new CoupleInviteService();
+    this.metricService = new CoupleMetricService(app);
   }
 
   async invitePartner(req: FastifyRequest<{ Body: CreateCoupleInvite }>, reply: FastifyReply) {
@@ -101,5 +102,48 @@ export class CoupleController {
     const { id } = req.params;
     const couple = await this.coupleService.delete(id);
     return reply.status(200).send(couple);
+  }
+
+  async metrics(req: FastifyRequest<{ Params: { coupleId: string} }>, reply: FastifyReply): Promise<Couple> {
+    const { coupleId } = req.params
+    const metric = await this.metricService.findByCoupleId(coupleId)
+
+    if (metric.isLeft()) {
+      return reply.status(metric.value.statusCode).send({
+        message: metric.value.message,
+        code: metric.value.code
+      });
+    }
+
+    const jwt = await req.jwtVerify<{
+      id: string;
+      email: string;
+    }>();
+
+    const couple = await this.coupleService.findByUserId(jwt.id)
+
+    if (couple.isLeft()) {
+      return reply.status(couple.value.statusCode).send({
+        message: couple.value.message,
+        code: couple.value.code
+      });
+    }
+
+    if (couple.value.id !== coupleId) {
+      return reply.status(404).send({
+        message: "Couple or metric not found.",
+        code: "NOT_FOUND"
+      });
+    }
+
+    const avgTotal = this.metricService.calculateAvgTotal(metric.value)
+
+    const response = {
+      ...metric.value,
+      avgTotal
+    }
+
+    console.log({avgTotal, response})
+    return reply.status(200).send(response);
   }
 }

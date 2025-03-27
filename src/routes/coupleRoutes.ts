@@ -34,6 +34,10 @@ export async function coupleRoutes(app: FastifyInstance) {
     app.get<{ Params: { userId: string } }>('/couples/by-user/:userId', async (req, reply) => {
       await coupleController.findByUserId(req, reply);
     });
+
+    app.get<{ Params: { coupleId: string } }>('/couples/:coupleId/metrics', async (req, reply) => {
+      await coupleController.metrics(req, reply);
+    });
   });
 
   app.post<{ Params: { token: string } }>('/couples/invite/accept/:token', async (req, reply) => {

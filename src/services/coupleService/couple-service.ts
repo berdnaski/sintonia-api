@@ -191,7 +191,7 @@ export class CoupleService {
     const couple = await this.coupleRepository.findOne(id);
 
     if (!couple) {
-      return left(new RequiredParametersError("Couple not found.", 404));
+      return left(new RequiredParametersError("Couple not found.", 404, "NOT_FOUND"));
     }
 
     return right(couple);
