@@ -61,7 +61,7 @@ export class SignalService {
 
     await this.metricRecordService.createMany(metricsMapped as CreateCoupleMetricRecord[])
 
-    this.metricService.calculateAverageMetrics(metric.value)
+    this.metricService.calculateAvgMetrics(metric.value)
 
     return right(iaResponse);
   }

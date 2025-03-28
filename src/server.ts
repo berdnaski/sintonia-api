@@ -58,4 +58,4 @@ dailyQuestionJob.start();
 jobWeeklyChallenge.start();
 
 const PORT = Number(process.env.PORT) || 3000;
-app.listen({ port: PORT }, () => console.log(`listening on port ${PORT}`));
+app.listen({ port: PORT }, (err) => console.log(`listening on port ${PORT}`, { err }));

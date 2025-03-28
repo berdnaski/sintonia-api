@@ -35,13 +35,13 @@ export class CoupleMetricService {
     const couple = await this.coupleMetricRepository.findByCoupleId(coupleId)
 
     if (!couple) {
-      return left(new RequiredParametersError("Couple metric not found."))
+      return left(new RequiredParametersError("Couple metric not found.", 404, "NOT_FOUND"))
     }
 
     return right(couple)
   }
 
-  async calculateAverageMetrics(metric: CoupleMetric) {
+  async calculateAvgMetrics(metric: CoupleMetric) {
     const records = await this.recordService.avgByClassification(metric.id)
 
     const medias = records.reduce(
@@ -87,5 +87,11 @@ export class CoupleMetricService {
       communication: clamp(communication.weight ? communication.percentage / communication.weight : metric.communication),
       intensity: clamp(intensity.weight ? intensity.percentage / intensity.weight : metric.intensity)
     })
+  }
+
+  calculateAvgTotal(metric: CoupleMetric) {
+    const { communication, connection, intensity, synchrony } = metric
+
+    return (communication + connection + intensity + synchrony) / 4
   }
 }
