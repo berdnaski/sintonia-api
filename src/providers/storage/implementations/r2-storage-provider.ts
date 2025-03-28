@@ -35,6 +35,7 @@ export class R2StorageProvider implements StorageProvider {
     });
 
     const signedUrl = await getSignedUrl(r2, command, { expiresIn: 10 });
+
     return signedUrl;
   }
 }

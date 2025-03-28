@@ -149,6 +149,10 @@ export class UserController {
     const { id } = req.params;
     const updatedData = req.body;
 
+    if (updatedData.password) {
+      updatedData.password = await hashPassword(updatedData.password);
+    }
+
     const updateResult = await this.userService.save(id, updatedData);
 
     if (updateResult.isLeft()) {
@@ -158,7 +162,7 @@ export class UserController {
     let avatarUrl = updateResult.value.avatarUrl;
 
     if (avatarUrl) {
-      avatarUrl = await this.storageProvider.getUrl(updatedData.avatarUrl);
+      avatarUrl = await this.storageProvider.getUrl(avatarUrl);
     }
 
     return reply.status(200).send({
