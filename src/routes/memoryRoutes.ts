@@ -24,13 +24,13 @@ export async function memoryRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get<{ Params: { ident: string } }>('/memories/:ident', async (req, reply) => {
-    await memoryController.findOne(req, reply);
-  });
-
-  app.get('/memories', async (req, reply) => {
+  app.get<{ Params: { coupleId: string } }>('/memories/:coupleId', async (req, reply) => {
     await memoryController.findAllByCouple(req, reply);
   });
+
+  // app.get<{ Params: { coupleId: string } }>('/memories/couple/:coupleId', async (req, reply) => {
+  //   await memoryController.findAllByCouple(req, reply);
+  // });
 
   app.delete<{ Params: { id: string } }>('/memories/:id', async (req, reply) => {
     await memoryController.remove(req, reply);

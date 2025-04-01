@@ -31,11 +31,8 @@ export async function uploadRoutes(app: FastifyInstance) {
 
     const { id } = getFileParamsSchema.parse(request.params);
 
-    const file = await prisma.file.findUniqueOrThrow({
-      where: { id }
-    });
 
-    const signedUrl = await storageProvider.getUrl(file.key);
+    const signedUrl = await storageProvider.getUrl(id);
 
     return { signedUrl };
   });

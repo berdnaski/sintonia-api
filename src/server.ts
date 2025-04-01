@@ -18,6 +18,7 @@ import { signalRoutes } from './routes/signalRoutes';
 import { userRoutes } from './routes/userRoutes';
 import { webhookRoutes } from './routes/webhookRoutes';
 import { uploadRoutes } from './routes/uploadRoutes';
+import { memoryRoutes } from './routes/memoryRoutes';
 
 const app: FastifyInstance = fastify();
 
@@ -48,6 +49,7 @@ app.register(coupleInviteRoutes);
 app.register(coupleRoutes);
 app.register(signalRoutes);
 app.register(uploadRoutes);
+app.register(memoryRoutes);
 app.register(webhookRoutes, { prefix: 'data' });
 app.register(questionsRoutes)
 app.register(challengeRoutes)

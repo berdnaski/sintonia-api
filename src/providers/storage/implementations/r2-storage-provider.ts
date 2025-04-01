@@ -29,13 +29,20 @@ export class R2StorageProvider implements StorageProvider {
   }
 
   async getUrl(key: string): Promise<string> {
-    const command = new GetObjectCommand({
-      Bucket: this.bucket,
-      Key: key,
-    });
-
-    const signedUrl = await getSignedUrl(r2, command, { expiresIn: 10 });
-
-    return signedUrl;
+    try {
+      const command = new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      });
+  
+      const signedUrl = await getSignedUrl(r2, command, { 
+        expiresIn: 3600 // Increase expiration time to 1 hour
+      });
+  
+      return signedUrl;
+    } catch (error) {
+      console.error('Error generating signed URL:', error);
+      throw new Error('Failed to generate file URL');
+    }
   }
 }

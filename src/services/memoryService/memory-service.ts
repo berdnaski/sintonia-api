@@ -22,15 +22,19 @@ export class MemoryService {
     if (!title || !description || !coupleId || !createdByUserId) {
       return left(new RequiredParametersError('Missing required parameters.'));
     }
-  
+
+    let avatarUrl = avatar;
+
+    
+
     const memory = await this.memoryRepository.create({
       title,
       description,
-      avatar,
       coupleId,
-      createdByUserId
-    })
-  
+      createdByUserId,
+      avatar
+    });
+
     return right(memory);
   }
   
@@ -46,8 +50,11 @@ export class MemoryService {
   }
 
   async findAllByCouple(coupleId: string): Promise<getAllMemoryResponse> {
-    const memories = await this.memoryRepository.findAll(coupleId); 
+    if (!coupleId) {
+      return left(new RequiredParametersError('Couple ID is required.'));
+    }
 
+    const memories = await this.memoryRepository.findAll(coupleId);
     return right(memories);
   }
 
