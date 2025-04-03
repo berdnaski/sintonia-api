@@ -2,6 +2,8 @@ import type { FastifyInstance } from "fastify";
 import { Auth } from "../middlewares/auth";
 import { CoupleController } from "../controllers/couple-controller";
 import { CheckSubscription } from "../middlewares/checkSubscription";
+import { Couple } from "@prisma/client";
+import { UpdateCopule } from "../interfaces/couple.interface";
 
 export async function coupleRoutes(app: FastifyInstance) {
   const coupleController = new CoupleController(app);
@@ -29,6 +31,10 @@ export async function coupleRoutes(app: FastifyInstance) {
 
     app.delete<{ Params: { id: string } }>('/couples/:id', async (req, reply) => {
       await coupleController.delete(req, reply);
+    });
+
+    app.put<{ Params: { id: string }, Body: UpdateCopule }>('/couples/by-user', async (req, reply) => {
+      await coupleController.updateByUser(req, reply);
     });
 
     app.get<{ Params: { userId: string } }>('/couples/by-user/:userId', async (req, reply) => {

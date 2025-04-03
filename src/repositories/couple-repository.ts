@@ -1,6 +1,6 @@
 import { Couple, CoupleInvite, User } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
-import { ICoupleRepository } from "../interfaces/couple.interface";
+import { ICoupleRepository, UpdateCopule } from "../interfaces/couple.interface";
 
 
 export type CoupleWithUsers = Couple & {
@@ -42,17 +42,14 @@ export class PrismaCoupleRepository implements ICoupleRepository {
 
   async deleteCouple(id: string): Promise<void> {
     await prisma.$transaction([
-      // Excluir os registros dependentes na tabela ai_responses
       prisma.aIResponse.deleteMany({
         where: { coupleId: id },
       }),
 
-      // Excluir os sinais relacionados
       prisma.signal.deleteMany({
         where: { coupleId: id },
       }),
 
-      // Excluir o couple
       prisma.couple.delete({
         where: { id },
       }),
@@ -105,4 +102,15 @@ export class PrismaCoupleRepository implements ICoupleRepository {
 
     return result;
   }
+
+    async update(id: string, data: UpdateCopule): Promise<Couple> {
+      const result = await prisma.couple.update({
+        where: {
+          id,
+        },
+        data
+      })
+
+      return result;
+    }
 }

@@ -77,6 +77,7 @@ model Couple {
   user1Id            String         @unique
   user2              User           @relation("CoupleUser2", fields: [user2Id], references: [id])
   user2Id            String         @unique
+  startAt            DateTime       @default(now())
   createdAt          DateTime       @default(now())
   signals            Signal[]       @relation
   aiResponses        AIResponse[]   @relation
