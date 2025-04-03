@@ -18,11 +18,14 @@ export type AcceptCoupleInvite = z.infer<typeof AcceptCoupleInvite>;
 export const CreateCoupleInvite = z.object({
   email: z.string().email('Invalid email'),
 });
+
 export type CreateCoupleInvite = z.infer<typeof CreateCoupleInvite>;
 
 export interface CreateCoupleResponse {
   couple: Couple;
 }
+
+export type UpdateCopule = Partial<Omit<Couple, 'id' | 'createdAt'>>;
 
 export interface ListCouplesResponse {
   couples: Couple[];
@@ -38,4 +41,5 @@ export interface ICoupleRepository {
   findAll(): Promise<Couple[]>;
   findOne(ident: string): Promise<Couple>;
   delete(id: string): Promise<Couple>;
+  update(id: string, data: UpdateCopule): Promise<Couple>;
 }

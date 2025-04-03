@@ -6,7 +6,7 @@ import { sintoniaConfig } from "../../config/api";
 import { Either, left, right } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
 import { ICoupleInviteRepository } from "../../interfaces/couple-invite.interface";
-import { ICoupleRepository } from "../../interfaces/couple.interface";
+import { ICoupleRepository, UpdateCopule } from "../../interfaces/couple.interface";
 import { IUserRepository } from "../../interfaces/user.interface";
 import { MailProvider } from "../../providers/mail/implementations/MailProvider";
 import { InviteToCoupleMailTemplate } from "../../providers/mail/templates/InviteCoupleTemplate";
@@ -30,6 +30,7 @@ type DeleteCoupleResponse = Either<RequiredParametersError, string>;
 type FindOneCoupleResponse = Either<RequiredParametersError, Couple>;
 type FindOneByAnyUserCoupleResponse = Either<RequiredParametersError, CoupleWithUsers>;
 type FindAllCoupleResponse = Either<RequiredParametersError, Couple[]>;
+type UpdateResponse = Either<RequiredParametersError, Couple>
 
 export class CoupleService {
   private coupleRepository: ICoupleRepository;
@@ -195,6 +196,25 @@ export class CoupleService {
     }
 
     return right(couple);
+  }
+
+  async updateByUserId(userId: string, data: UpdateCopule): Promise<UpdateResponse> {
+    const couple = await this.coupleRepository.findCoupleByUserId(userId);
+
+    if (!couple) {
+      return left(new RequiredParametersError("Couple not found", 404, "NOT_FOUND"));
+    }
+
+    const updatedCouple = await this.coupleRepository.update(couple.id, data);
+
+    return right({
+      ...couple,
+      relationshipStatus: updatedCouple.relationshipStatus,
+      user1Id: updatedCouple.user1Id,
+      user2Id: updatedCouple.user2Id,
+      startAt: updatedCouple.startAt,
+      createdAt: updatedCouple.createdAt,
+    })
   }
 
   async findByUserId(userId: string): Promise<FindOneByAnyUserCoupleResponse> {

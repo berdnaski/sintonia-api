@@ -1,7 +1,6 @@
 import type { Couple, User } from '@prisma/client';
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { CreateCoupleInvite } from '../interfaces/couple.interface';
-import { CoupleInviteService } from '../services/coupleInvitesService/couple-invites.service';
+import { CreateCoupleInvite, UpdateCopule } from '../interfaces/couple.interface';
 import { CoupleService } from '../services/coupleService/couple-service';
 import { CoupleMetricService } from '../services/coupleMetricService/couple-metric-service';
 
@@ -104,6 +103,24 @@ export class CoupleController {
     return reply.status(200).send(couple);
   }
 
+  async updateByUser(req: FastifyRequest<{ Body: UpdateCopule }>, reply: FastifyReply): Promise<Couple> {
+    const jwt = await req.jwtVerify<{
+      id: string;
+      email: string;
+    }>();
+
+    const updated = await this.coupleService.updateByUserId(jwt.id, req.body);
+
+    if (updated.isLeft()) {
+      return reply.status(updated.value.statusCode).send({
+        message: updated.value.message,
+        code: updated.value.code
+      });
+    }
+
+    return reply.status(200).send(updated.value);
+  }
+
   async metrics(req: FastifyRequest<{ Params: { coupleId: string} }>, reply: FastifyReply): Promise<Couple> {
     const { coupleId } = req.params
     const metric = await this.metricService.findByCoupleId(coupleId)
@@ -143,7 +160,6 @@ export class CoupleController {
       avgTotal
     }
 
-    console.log({avgTotal, response})
     return reply.status(200).send(response);
   }
 }
