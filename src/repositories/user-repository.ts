@@ -14,6 +14,7 @@ export class PrismaUserRepository implements IUserRepository {
       include: {
         subscriptions: true,
         signals: true,
+        couple: true
       },
     });
 

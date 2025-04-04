@@ -23,16 +23,13 @@ export const CheckSubscription = async (
 
     const couple = await coupleService.findByUserId(jwt.id);
 
-    if (couple.isLeft()) {
-      return reply.send(400).send({
-        message: couple.value.message
-      });
-    }
+    if (couple.isRight()) {
+      const subscriptions = couple.value.users.map(user => user.stripeSubscriptionStatus)
 
-    const subscriptions = couple.value.users.map(user => user.stripeSubscriptionStatus)
+      if (subscriptions.includes('active')) {
+        return;
+      }
 
-    if (subscriptions.includes('active')) {
-      return;
     }
 
     const userService = new UserService(request.server);
