@@ -14,6 +14,7 @@ export class PrismaUserRepository implements IUserRepository {
       include: {
         subscriptions: true,
         signals: true,
+        couple: true
       },
     });
 
@@ -33,16 +34,28 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findOne(ident: string): Promise<User> {
-    const query = await prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
         OR: [{ email: ident }, { id: ident }],
       },
       include: {
-        Tokens: true
+        Tokens: true,
+        couple: {
+          include: {
+            users: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                stripeSubscriptionStatus: true,
+              },
+            }
+          }
+        }
       }
     });
 
-    return query as User;
+    return user;
   }
 
   async findAll(): Promise<User[]> {
@@ -77,5 +90,16 @@ export class PrismaUserRepository implements IUserRepository {
     })
 
     return result;
+  }
+
+  async saveMany(userIds: string[], data: UserUpdate): Promise<void> {
+    await prisma.user.updateMany({
+      where: {
+        id: {
+          in: userIds,
+        },
+      },
+      data
+    })
   }
 }

@@ -23,8 +23,13 @@ export const CheckSubscription = async (
 
     const couple = await coupleService.findByUserId(jwt.id);
 
-    if (!couple.isLeft() && (couple.value.user1.stripeSubscriptionStatus === 'active' || couple.value.user2.stripeSubscriptionStatus === 'active')) {
-      return;
+    if (couple.isRight()) {
+      const subscriptions = couple.value.users.map(user => user.stripeSubscriptionStatus)
+
+      if (subscriptions.includes('active')) {
+        return;
+      }
+
     }
 
     const userService = new UserService(request.server);

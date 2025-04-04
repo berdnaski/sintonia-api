@@ -33,11 +33,10 @@ export interface ListCouplesResponse {
 
 export interface ICoupleRepository {
   findCoupleByUserId(userId: string): Promise<CoupleWithUsers | null>;
-  createCouple(user1Id: string, user2Id: string, status: string): Promise<Couple>;
+  createCouple(status: string): Promise<Couple>;
   deleteCouple(coupleId: string): Promise<void>;
   createInvite(data: { inviterId: string; inviteeEmail: string; token: string; expiresAt: number }): Promise<CoupleInvite>;
   deleteInvite(id: string): Promise<void>;
-  acceptInvite(inviterId: string, inviteeId: string): Promise<Couple>;
   findAll(): Promise<Couple[]>;
   findOne(ident: string): Promise<Couple>;
   delete(id: string): Promise<Couple>;

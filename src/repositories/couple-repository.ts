@@ -4,16 +4,19 @@ import { ICoupleRepository, UpdateCopule } from "../interfaces/couple.interface"
 
 
 export type CoupleWithUsers = Couple & {
-  user1: Pick<User, 'id' | 'name' | 'email' | 'stripeSubscriptionStatus'>;
-  user2: Pick<User, 'id' | 'name' | 'email' | 'stripeSubscriptionStatus'>;
+  users: Pick<User, 'id' | 'name' | 'email' | 'stripeSubscriptionStatus'>[];
 };
 
 export class PrismaCoupleRepository implements ICoupleRepository {
   async findCoupleByUserId(userId: string): Promise<CoupleWithUsers | null> {
     return prisma.couple.findFirst({
-      where: { OR: [{ user1Id: userId }, { user2Id: userId }] },
+      where: {
+        users: {
+          some: { id: userId },
+        },
+      },
       include: {
-        user1: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -21,22 +24,13 @@ export class PrismaCoupleRepository implements ICoupleRepository {
             stripeSubscriptionStatus: true,
           },
         },
-        user2: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            stripeSubscriptionStatus: true
-          },
-        },
       }
-
     });
   }
 
-  async createCouple(user1Id: string, user2Id: string, status: string): Promise<Couple> {
+  async createCouple(status: string): Promise<Couple> {
     return prisma.couple.create({
-      data: { user1Id, user2Id, relationshipStatus: status },
+      data: { relationshipStatus: status },
     });
   }
 
@@ -71,16 +65,6 @@ export class PrismaCoupleRepository implements ICoupleRepository {
     await prisma.coupleInvite.delete({ where: { id } });
   }
 
-  async acceptInvite(inviterId: string, inviteeId: string): Promise<Couple> {
-    return prisma.couple.create({
-      data: {
-        user1Id: inviterId,
-        user2Id: inviteeId,
-        relationshipStatus: "active",
-      },
-    });
-  }
-
   async findAll(): Promise<Couple[]> {
     return prisma.couple.findMany();
   }
@@ -89,6 +73,16 @@ export class PrismaCoupleRepository implements ICoupleRepository {
     const query = await prisma.couple.findFirst({
       where: {
         id: ident
+      },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            stripeSubscriptionStatus: true,
+          },
+        }
       }
     })
 
