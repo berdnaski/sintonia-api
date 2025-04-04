@@ -102,35 +102,40 @@ export async function GenerateDailyQuestion({ coupleId, userId }: DailyQuestionP
     const answer = await generateText({
       model: deepseek,
       prompt: `
-Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar uma única pergunta reflexiva para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
+        Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar uma única pergunta reflexiva para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
 
-Dados:
-Histórico de interações: ${JSON.stringify(interactionHistory)}
-Sinais recentes: ${JSON.stringify(signals)}
-Perguntas e respostas anteriores: ${JSON.stringify(questions)}
+        Dados:
+        Histórico de interações: ${JSON.stringify(interactionHistory)}
+        Sinais recentes: ${JSON.stringify(signals)}
+        Perguntas e respostas anteriores: ${JSON.stringify(questions)}
 
-Instruções:
-- Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
-- Gere APENAS uma pergunta reflexiva que não tenha sido feita anteriormente.
-- A pergunta deve ser relevante para o contexto do relacionamento do casal.
-- Não repita perguntas que já foram feitas anteriormente.
-- Responda em formato JSON com um único campo "question" contendo a pergunta.
-- A pergunta deve ter no máximo 100 caracteres.
-- NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
-`,
+        Instruções:
+        - Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
+        - Gere APENAS uma pergunta reflexiva que não tenha sido feita anteriormente.
+        - A pergunta deve ser relevante para o contexto do relacionamento do casal.
+        - Não repita perguntas que já foram feitas anteriormente.
+        - Responda em formato JSON com um único campo "question" contendo a pergunta.
+        - A pergunta deve ter no máximo 100 caracteres.
+        - NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
+
+        Formato exato da resposta:
+        {
+          "question": "[question]"
+        }
+      `,
       system: `
-Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar perguntas reflexivas únicas e relevantes para o casal, com base nos dados fornecidos.
-REGRAS IMPORTANTES:
-- Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
-- Gere apenas uma pergunta por vez.
-- Gere uma pergunta diferente para cada usuário.
-- Não repita perguntas que já foram feitas anteriormente.
-- A pergunta deve ser direta e promover a reflexão sobre o relacionamento.
-- Responda sempre em formato JSON com o campo "question".
-- Mantenha a pergunta curta e objetiva.
-- NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
-- SEMPRE feche todas as aspas e chaves corretamente.
-`,
+        Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar perguntas reflexivas únicas e relevantes para o casal, com base nos dados fornecidos.
+        REGRAS IMPORTANTES:
+        - Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
+        - Gere apenas uma pergunta por vez.
+        - Gere uma pergunta diferente para cada usuário.
+        - Não repita perguntas que já foram feitas anteriormente.
+        - A pergunta deve ser direta e promover a reflexão sobre o relacionamento.
+        - Responda sempre em formato JSON com o campo "question".
+        - Mantenha a pergunta curta e objetiva.
+        - NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
+        - SEMPRE feche todas as aspas e chaves corretamente.
+        `,
       maxTokens: 100
     });
 

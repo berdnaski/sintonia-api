@@ -3,6 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { ChallengeController } from "../controllers/challenge-controller";
 import { Auth } from "../middlewares/auth";
 import { CheckSubscription } from "../middlewares/checkSubscription";
+import { ChallengeService } from "../services/challengeService/challenge-service";
+import { QuestionService } from "../services/questionService/question-service";
 
 export async function challengeRoutes(app: FastifyInstance) {
   const challengeController = new ChallengeController(app);
@@ -20,5 +22,9 @@ export async function challengeRoutes(app: FastifyInstance) {
 
   app.get<{ Params: { userId: string } }>('/challenge/all/:userId', async (req, reply) => {
     await challengeController.findAll(req, reply);
+  });
+
+  app.post<{ Body: { userId: string, coupleId: string } }>('/challenge', async (req, reply) => {
+    await challengeController.generateChallenge(req, reply);
   });
 }

@@ -65,8 +65,19 @@ export class PrismaCoupleRepository implements ICoupleRepository {
     await prisma.coupleInvite.delete({ where: { id } });
   }
 
-  async findAll(): Promise<Couple[]> {
-    return prisma.couple.findMany();
+  async findAll(): Promise<CoupleWithUsers[]> {
+    return prisma.couple.findMany({
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            stripeSubscriptionStatus: true,
+          },
+        },
+      },
+    });
   }
 
   async findOne(ident: string): Promise<Couple> {

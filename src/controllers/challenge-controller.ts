@@ -63,4 +63,10 @@ export class ChallengeController {
       return reply.status(204).send();
     }
   }
+
+  async generateChallenge(req: FastifyRequest<{ Body: { userId: string, coupleId: string } }>, reply: FastifyReply) {
+    const ai = await this.challengeService.generateChallenge(req.body.userId, req.body.coupleId);
+
+    return reply.send(ai)
+  }
 }

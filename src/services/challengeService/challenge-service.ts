@@ -26,6 +26,7 @@ export class ChallengeService {
   async generateChallenge(userId: string, coupleId: string): Promise<generateChallengeResponse> {
     const answer = await GenerateWeeklyChallenge({ userId, coupleId });
 
+    console.log(answer);
     const result = await this.challengeRepository.create({
       coupleId,
       userId,

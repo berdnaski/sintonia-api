@@ -129,39 +129,44 @@ export async function GenerateWeeklyChallenge({ coupleId, userId }: WeeklyChalle
     const answer = await generateText({
       model: deepseek,
       prompt: `
-Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar um único desafio semanal para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
+        Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar um único desafio semanal para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
 
-Dados:
-Histórico de interações: ${JSON.stringify(interactionHistory)}
-Sinais recentes: ${JSON.stringify(signals)}
-Perguntas e respostas anteriores: ${JSON.stringify(questions)}
-Desafios e respostas anteriores: ${JSON.stringify(challenges)}
+        Dados:
+        Histórico de interações: ${JSON.stringify(interactionHistory)}
+        Sinais recentes: ${JSON.stringify(signals)}
+        Perguntas e respostas anteriores: ${JSON.stringify(questions)}
+        Desafios e respostas anteriores: ${JSON.stringify(challenges)}
 
-Instruções:
-- Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
-- Gere APENAS um desafio semanal que não tenha sido proposto anteriormente.
-- O desafio deve ser relevante para o contexto do relacionamento do casal.
-- Não repita desafios que já foram propostos anteriormente.
-- Responda em formato JSON com um único campo "challenge" contendo o desafio.
-- O desafio deve ter no máximo 100 caracteres.
-- NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
-`,
+        Instruções:
+        - Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
+        - Gere APENAS um desafio semanal que não tenha sido proposto anteriormente.
+        - O desafio deve ser relevante para o contexto do relacionamento do casal.
+        - Não repita desafios que já foram propostos anteriormente.
+        - Responda em formato JSON com um único campo "challenge" contendo o desafio.
+        - O desafio deve ter no máximo 100 caracteres.
+        - NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
+        Formato exato da resposta:
+        {
+          "challenge": "[desafio]"
+        }
+      `,
       system: `
-Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar desafios semanais únicos e relevantes para o casal, com base nos dados fornecidos.
-REGRAS IMPORTANTES:
-- Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
-- Gere apenas um desafio por vez.
-- Gere um desafio diferente para cada usuário.
-- Não repita desafios que já foram propostos anteriormente.
-- O desafio deve ser direto e promover a ação ou reflexão sobre o relacionamento.
-- Responda sempre em formato JSON com o campo "challenge".
-- Mantenha o desafio curto e objetivo.
-- NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
-- SEMPRE feche todas as aspas e chaves corretamente.
-`,
+        Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar desafios semanais únicos e relevantes para o casal, com base nos dados fornecidos.
+        REGRAS IMPORTANTES:
+        - Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
+        - Gere apenas um desafio por vez.
+        - Gere um desafio diferente para cada usuário.
+        - Não repita desafios que já foram propostos anteriormente.
+        - O desafio deve ser direto e promover a ação ou reflexão sobre o relacionamento.
+        - Responda sempre em formato JSON com o campo "challenge".
+        - Mantenha o desafio curto e objetivo.
+        - NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
+        - SEMPRE feche todas as aspas e chaves corretamente.
+        `,
       maxTokens: 100
     });
 
+    console.log({ai: answer.text})
     if (!answer?.text) {
       return {
         response: {

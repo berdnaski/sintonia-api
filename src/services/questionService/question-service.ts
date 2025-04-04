@@ -5,12 +5,13 @@ import { RequiredParametersError } from "../../errors/required-parameters.error"
 import { IQuestionsRepository, IUpdateQuestion } from "../../interfaces/question.interface";
 import { GenerateDailyQuestion } from "../../providers/ai/functions/generateDailyQuestion";
 import { PrismaQuestionRepository } from "../../repositories/question-repository";
+import { Paginate, PaginationData } from "../../@types/prisma";
 
 type generateQuestionResponse = Either<RequiredParametersError, Question>
 type saveQuestionResponse = Either<RequiredParametersError, Question>;
 
 type getQuestionByIdResponse = Either<RequiredParametersError, Question | null>;
-type getAllQuestionsResponse = Either<RequiredParametersError, Question[]>;
+type getAllQuestionsResponse = Either<RequiredParametersError, Paginate<Question>>;
 type existsQuestionResponse = Either<RequiredParametersError, boolean>;
 type removeQuestionResponse = Either<RequiredParametersError, Question>;
 
@@ -33,8 +34,9 @@ export class QuestionService {
     return right(result);
   }
 
-  async getAllQuestions(userId: string): Promise<getAllQuestionsResponse> {
-    const answer = await this.questionRepository.findAll(userId);
+  async getAllQuestions(userId: string, params: PaginationData): Promise<getAllQuestionsResponse> {
+    const answer = await this.questionRepository.findAll(userId, params);
+
     return right(answer);
   }
 
