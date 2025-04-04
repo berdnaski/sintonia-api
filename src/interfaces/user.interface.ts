@@ -35,12 +35,7 @@ export const UserLogin = z.object({
 });
 export type UserLogin = z.infer<typeof UserLogin>;
 
-export interface UserUpdate {
-  name?: string;
-  email?: string;
-  password?: string;
-  avatarUrl?: string | null;
-}
+export type UserUpdate = Partial<Omit<User, 'id' | 'createdAt'>>
 
 export interface IUserRepository {
   create(user: CreateUser): Promise<User | null>;
@@ -49,4 +44,5 @@ export interface IUserRepository {
   findOne(ident: string): Promise<User>;
   findAll(): Promise<User[]>;
   delete(id: string): Promise<User>;
+  saveMany(userIds: string[], data: UserUpdate): Promise<void>
 }

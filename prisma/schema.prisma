@@ -59,13 +59,13 @@ model User {
   stripeSubscriptionId     String?
   signals                  Signal[]       @relation
   subscriptions            Subscription[] @relation
-  coupleAsUser1            Couple?        @relation("CoupleUser1")
-  coupleAsUser2            Couple?        @relation("CoupleUser2")
+  coupleId                 String?
   Tokens                   Tokens[]       @relation("Tokens")
   invites                  CoupleInvite[] @relation("Inviter")
   Memory                   Memory[]
   Questions                Question[]
   Challenge                Challenge[]
+  couple                   Couple?        @relation(fields: [coupleId], references: [id])
 
   @@map("users")
 }
@@ -73,16 +73,13 @@ model User {
 model Couple {
   id                 String         @id @default(uuid())
   relationshipStatus String
-  user1              User           @relation("CoupleUser1", fields: [user1Id], references: [id])
-  user1Id            String         @unique
-  user2              User           @relation("CoupleUser2", fields: [user2Id], references: [id])
-  user2Id            String         @unique
   startAt            DateTime       @default(now())
   createdAt          DateTime       @default(now())
   signals            Signal[]       @relation
   aiResponses        AIResponse[]   @relation
   Memory             Memory[]
   CoupleMetric       CoupleMetric[]
+  users              User[]
 
   @@map("couples")
 }

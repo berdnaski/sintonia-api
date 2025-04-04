@@ -165,8 +165,11 @@ export class CoupleService {
       return left(new RequiredParametersError("The user who sent the invite is already in a couple."));
     }
 
-    const invitee = await this.userRepository.findOne(invite.inviteeEmail);
-    const couple = await this.coupleRepository.createCouple(invite.inviterId, invitee.id, "active");
+    const couple = await this.coupleRepository.createCouple("active");
+
+    this.userRepository.saveMany([invite.inviterId, inviteeId], {
+      coupleId: couple.id,
+    });
 
     invite.used = true;
     this.coupleInviteRepository.save(invite);
@@ -210,8 +213,6 @@ export class CoupleService {
     return right({
       ...couple,
       relationshipStatus: updatedCouple.relationshipStatus,
-      user1Id: updatedCouple.user1Id,
-      user2Id: updatedCouple.user2Id,
       startAt: updatedCouple.startAt,
       createdAt: updatedCouple.createdAt,
     })

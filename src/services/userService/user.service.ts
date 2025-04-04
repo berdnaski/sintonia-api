@@ -27,14 +27,7 @@ class UserService {
   }
 
   async findOne(ident: string): Promise<findOneResponse> {
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { id: ident },
-          { email: ident },
-        ]
-      },
-    });
+    const user = await this.userRepository.findOne(ident);
 
     if (!user) {
       return left(new RequiredParametersError("User not found"));
