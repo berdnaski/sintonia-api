@@ -1,6 +1,6 @@
 import type { Memory } from "@prisma/client";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
-import type { IMemoryRepository } from "../../interfaces/memory.interface";
+import type { CreateMemory, IMemoryRepository } from "../../interfaces/memory.interface";
 import { left, right, type Either } from "../../errors/either";
 import { PrismaMemoryRepository } from "../../repositories/memory-repository";
 import { Paginate, PaginationParams } from "../../@types/prisma";
@@ -19,22 +19,12 @@ export class MemoryService {
     this.memoryRepository = new PrismaMemoryRepository();
   }
 
-  async create(title: string, description: string, coupleId: string, createdByUserId: string, avatar?: string): Promise<createMemoryResponse> {
-    if (!title || !description || !coupleId || !createdByUserId) {
+  async create(data: CreateMemory): Promise<createMemoryResponse> {
+    if (!data.title || !data.description || !data.coupleId || !data.createdByUserId) {
       return left(new RequiredParametersError('Missing required parameters.'));
     }
 
-    let avatarUrl = avatar;
-
-
-
-    const memory = await this.memoryRepository.create({
-      title,
-      description,
-      coupleId,
-      createdByUserId,
-      avatar
-    });
+    const memory = await this.memoryRepository.create(data);
 
     return right(memory);
   }
