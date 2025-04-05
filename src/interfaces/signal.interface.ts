@@ -1,6 +1,7 @@
 import type { Signal } from "@prisma/client";
 import { z } from "zod";
 import { CreateUser } from "./user.interface";
+import { Paginate, PaginationParams } from "../@types/prisma";
 
 export interface ISignal {
   id: string;
@@ -42,5 +43,5 @@ export interface ISignalRepository {
   findAll(): Promise<Signal[]>;
   exists(ident: string): Promise<boolean>;
   remove(id: string): Promise<Signal>
-  findByCoupleId(coupleId: string): Promise<Signal[]>
+  findByCoupleId(coupleId: string, params: PaginationParams): Promise<Paginate<Signal>>
 }

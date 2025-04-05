@@ -1,4 +1,5 @@
 import { AIResponse, Prisma } from "@prisma/client";
+import { Paginate, PaginationParams } from "../@types/prisma";
 
 export interface ICreateIAResponse {
   coupleId: string;
@@ -15,6 +16,6 @@ export interface GenerateAnalysisResponse {
 
 export interface IAIResponseRepository {
   create(ai: ICreateIAResponse): Promise<AIResponse>
-  findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]>;
+  findByCoupleId(coupleId: string, params: PaginationParams): Promise<Paginate<AIResponse>>;
   findAll(): Promise<AIResponse[]>
 }

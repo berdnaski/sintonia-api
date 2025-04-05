@@ -18,7 +18,6 @@ export class JobDailyQuestion {
     const job = cron.schedule(sintoniaConfig.jobs.daily_questions, async () => {
       const couples = await this.coupleRepository.findAll();
 
-      console.log({couples})
       for (const couple of couples) {
         if (!couple.users.length) {
           continue

@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, type FastifyReply } from "fastify";
 import { CreateSignal, type ICreateSignal, type ISignalUpdate } from "../interfaces/signal.interface";
 import { SignalService } from "../services/signalService/signal-service";
+import { PaginationParams } from "../@types/prisma";
 
 export class SignalController {
   private signalService: SignalService;
@@ -32,16 +33,19 @@ export class SignalController {
     return reply.status(201).send(result.value);
   }
 
-  async findAIResponsesByCoupleId(req: FastifyRequest<{ Params: { coupleId: string }, Querystring: { limit?: number } }>, reply: FastifyReply) {
+  async findAIResponsesByCoupleId(req: FastifyRequest<{ Params: { coupleId: string }, Querystring: PaginationParams }>, reply: FastifyReply) {
     const { coupleId } = req.params;
-    const { limit = 3 } = req.query; 
-    const aiResponsesResult = await this.signalService.getAnalysisHistory(coupleId, limit);
-  
+
+    const aiResponsesResult = await this.signalService.getAnalysisHistory(coupleId, {
+      perPage: req.query.perPage,
+      page: req.query.page,
+    });
+
     if (aiResponsesResult.isLeft()) {
       const error = aiResponsesResult.value;
       return reply.status(400).send({ message: error.message });
     }
-  
+
     return reply.status(200).send(aiResponsesResult.value);
   }
 
@@ -72,8 +76,11 @@ export class SignalController {
     }
   }
 
-  async findAll(req: FastifyRequest, reply: FastifyReply) {
-    const signalsResult = await this.signalService.findAll();
+  async findAllByCoupleId(req: FastifyRequest<{ Params: { coupleId: string }, Querystring: PaginationParams }>, reply: FastifyReply) {
+    const signalsResult = await this.signalService.findAllByCoupleId(req.params.coupleId, {
+      perPage: req.query.perPage,
+      page: req.query.page
+    });
 
     if (signalsResult.isLeft()) {
       const error = signalsResult.value;

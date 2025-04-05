@@ -1,6 +1,7 @@
-import type { Memory } from "@prisma/client";
+import type { Memory, Question } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import type { CreateMemory, IMemory, IMemoryRepository, MemoryUpdate } from "../interfaces/memory.interface";
+import { Paginate, PaginationParams } from "../@types/prisma";
 
 export class PrismaMemoryRepository implements IMemoryRepository {
   async create(memory: CreateMemory): Promise<Memory> {
@@ -24,7 +25,7 @@ export class PrismaMemoryRepository implements IMemoryRepository {
       data: {
         title: updatedData.title,
         description: updatedData.description,
-        avatarUrl: updatedData.avatar ?? null, 
+        avatarUrl: updatedData.avatar ?? null,
       }
     });
 
@@ -34,43 +35,40 @@ export class PrismaMemoryRepository implements IMemoryRepository {
   async findOne(ident: string): Promise<Memory | null> {
     const query = await prisma.memory.findFirst({
       where: {
-        OR: [{ id: ident }, { coupleId: ident }], 
+        OR: [{ id: ident }, { coupleId: ident }],
       },
       include: {
-        couple: true,  
-        createdByUser: true, 
+        couple: true,
+        createdByUser: true,
       },
     });
 
     return query;
   }
 
-  async findAll(coupleId: string, limit: number, page: number): Promise<Memory[]> {
-    const skip = (page - 1) * limit;
-  
-    const memories = await prisma.memory.findMany({
+  async findAll(coupleId: string, params: PaginationParams): Promise<Paginate<Memory>> {
+    const memories = await prisma.memory.paginate<Memory>({
       where: {
         coupleId,
       },
       orderBy: {
         createdAt: 'desc',
       },
-      take: limit,
-      skip,
       include: {
         couple: true,
         createdByUser: true,
       },
+      ...params
     });
-  
+
     return memories;
   }
-  
+
 
   async exists(ident: string): Promise<boolean> {
     const query = await prisma.memory.findFirst({
       where: {
-        OR: [{ id: ident }, { coupleId: ident }], 
+        OR: [{ id: ident }, { coupleId: ident }],
       },
     });
 

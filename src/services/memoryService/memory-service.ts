@@ -3,17 +3,18 @@ import { RequiredParametersError } from "../../errors/required-parameters.error"
 import type { IMemoryRepository } from "../../interfaces/memory.interface";
 import { left, right, type Either } from "../../errors/either";
 import { PrismaMemoryRepository } from "../../repositories/memory-repository";
+import { Paginate, PaginationParams } from "../../@types/prisma";
 
 type createMemoryResponse = Either<RequiredParametersError, Memory>;
 type getMemoryByIdResponse = Either<RequiredParametersError, Memory>;
-type getAllMemoryResponse = Either<RequiredParametersError, Memory[]>;
+type getAllMemoryResponse = Either<RequiredParametersError, Paginate<Memory>>;
 type existsMemoryResponse = Either<RequiredParametersError, boolean>;
 type removeMemoryResponse = Either<RequiredParametersError, Memory>;
 type updateMemoryResponse = Either<RequiredParametersError, Memory>;
 
 export class MemoryService {
   private memoryRepository: IMemoryRepository;
-  
+
   constructor() {
     this.memoryRepository = new PrismaMemoryRepository();
   }
@@ -25,7 +26,7 @@ export class MemoryService {
 
     let avatarUrl = avatar;
 
-    
+
 
     const memory = await this.memoryRepository.create({
       title,
@@ -37,7 +38,7 @@ export class MemoryService {
 
     return right(memory);
   }
-  
+
 
   async findOne(id: string): Promise<getMemoryByIdResponse> {
     const memory = await this.memoryRepository.findOne(id);
@@ -50,18 +51,18 @@ export class MemoryService {
   }
 
   async findAllByCouple(
-    coupleId: string, 
-    limit: number = 8, 
-    page: number = 1
+    coupleId: string,
+    params: PaginationParams
   ): Promise<getAllMemoryResponse> {
     if (!coupleId) {
       return left(new RequiredParametersError('Couple ID is required.'));
     }
-  
-    const memories = await this.memoryRepository.findAll(coupleId, limit, page);
+
+    const memories = await this.memoryRepository.findAll(coupleId, params);
+
     return right(memories);
   }
-  
+
 
   async save(id: string, updatedData: { title?: string; description?: string; avatar?: string }): Promise<updateMemoryResponse> {
     const memory = await this.memoryRepository.findOne(id);

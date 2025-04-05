@@ -1,4 +1,4 @@
-export type PaginationData = {
+export type PaginationParams = {
   perPage?: number;
   page?: number;
 }

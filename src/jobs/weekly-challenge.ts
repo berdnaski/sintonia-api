@@ -17,7 +17,7 @@ export class JobWeeklyChallenge {
   public start() {
     const job = cron.schedule(sintoniaConfig.jobs.weekly_challenges, async () => {
       const couples = await this.coupleRepository.findAll()
-      console.log({couples})
+
       for (const couple of couples) {
         if (!couple.users.length) {
           continue

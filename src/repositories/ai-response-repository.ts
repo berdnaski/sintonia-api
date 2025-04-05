@@ -1,6 +1,7 @@
 import { AIResponse } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import { IAIResponseRepository, ICreateIAResponse } from "../interfaces/ai-response.interface";
+import { Paginate, PaginationParams } from "../@types/prisma";
 
 export class PrismaAIResponseRepository implements IAIResponseRepository {
   async create(data: ICreateIAResponse): Promise<AIResponse> {
@@ -10,11 +11,11 @@ export class PrismaAIResponseRepository implements IAIResponseRepository {
   }
 
 
-  async findByCoupleId(coupleId: string, limit: number): Promise<AIResponse[]> {
-    return prisma.aIResponse.findMany({
+  async findByCoupleId(coupleId: string, params: PaginationParams): Promise<Paginate<AIResponse>> {
+    return prisma.aIResponse.paginate<AIResponse>({
       where: { coupleId },
       orderBy: { createdAt: "desc" },
-      take: limit,
+      ...params,
     });
   }
 

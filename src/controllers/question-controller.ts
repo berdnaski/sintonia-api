@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, type FastifyReply } from "fastify";
 import { IUpdateQuestion } from "../interfaces/question.interface";
 import { QuestionService } from "../services/questionService/question-service";
-import { PaginationData } from "../@types/prisma";
+import { PaginationParams } from "../@types/prisma";
 
 export class QuestionController {
   private questionService: QuestionService;
@@ -35,7 +35,7 @@ export class QuestionController {
     }
   }
 
-  async findAll(req: FastifyRequest<{ Params: { userId: string }, Querystring: PaginationData }>, reply: FastifyReply) {
+  async findAll(req: FastifyRequest<{ Params: { userId: string }, Querystring: PaginationParams }>, reply: FastifyReply) {
     const { userId } = req.params
     const { perPage, page } = req.query
 

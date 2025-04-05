@@ -3,6 +3,7 @@ import { MemoryService } from "../services/memoryService/memory-service";
 import { CreateMemory } from "../interfaces/memory.interface";
 import type { StorageProvider } from "../providers/storage/storage-provider";
 import { R2StorageProvider } from "../providers/storage/implementations/r2-storage-provider";
+import { PaginationParams } from "../@types/prisma";
 
 export class MemoryController {
   private memoryService: MemoryService;
@@ -18,7 +19,7 @@ export class MemoryController {
       const fields = await req.parts();
       const formData: Record<string, any> = {};
       let file;
-  
+
       for await (const part of fields) {
         if (part.type === 'file') {
           file = part;
@@ -26,9 +27,9 @@ export class MemoryController {
           formData[part.fieldname] = part.value;
         }
       }
-  
+
       const { title, description, coupleId, createdByUserId } = formData;
-  
+
       let avatarUrl = null;
       if (file) {
         try {
@@ -43,7 +44,7 @@ export class MemoryController {
           return reply.status(400).send({ message: "Failed to upload memory image" });
         }
       }
-  
+
       const result = await this.memoryService.create(
         title,
         description,
@@ -51,18 +52,18 @@ export class MemoryController {
         createdByUserId,
         avatarUrl
       );
-  
+
       if (result.isLeft()) {
         const error = result.value;
         return reply.status(400).send({ message: error.message });
       }
-  
+
       let memoryWithUrl = result.value;
       if (memoryWithUrl.avatarUrl) {
         const signedUrl = await this.storageProvider.getUrl(memoryWithUrl.avatarUrl);
         memoryWithUrl = { ...memoryWithUrl, avatarUrl: signedUrl };
       }
-  
+
       reply.status(201).send(memoryWithUrl);
     } catch (error) {
       console.error('Error creating memory:', error);
@@ -84,17 +85,18 @@ export class MemoryController {
   }
 
  async findAllByCouple(
-  req: FastifyRequest<{ 
-    Params: { coupleId: string }, 
-    Querystring: { limit?: number; page?: number } 
-  }>, 
+  req: FastifyRequest<{
+    Params: { coupleId: string },
+    Querystring: PaginationParams
+  }>,
   reply: FastifyReply
 ) {
   const { coupleId } = req.params;
-  const limit = Number(req.query.limit) || 8;
-  const page = Number(req.query.page) || 1;
 
-  const memories = await this.memoryService.findAllByCouple(coupleId, limit, page);
+  const memories = await this.memoryService.findAllByCouple(coupleId, {
+    perPage: req.query.perPage,
+    page: req.query.page
+  });
 
   if (memories.isLeft()) {
     const error = memories.value;
@@ -102,7 +104,7 @@ export class MemoryController {
   }
 
   const memoriesWithUrls = await Promise.all(
-    memories.value.map(async (memory) => {
+    memories.value.data.map(async (memory) => {
       if (memory.avatarUrl) {
         const signedUrl = await this.storageProvider.getUrl(memory.avatarUrl);
         return { ...memory, avatarUrl: signedUrl };
@@ -118,10 +120,10 @@ export class MemoryController {
   async save(req: FastifyRequest<{ Params: { id: string }, Body: { title?: string, description?: string, avatar?: string } }>, reply: FastifyReply) {
     const { id } = req.params;
     const updatedData = req.body;
-  
+
     if (updatedData && (updatedData.title || updatedData.description || updatedData.avatar)) {
       const updateResult = await this.memoryService.save(id, updatedData);
-  
+
       if (updateResult.isLeft()) {
         const error = updateResult.value;
         return reply.status(400).send({ message: error.message });
@@ -132,7 +134,7 @@ export class MemoryController {
       return reply.status(400).send({ message: 'Invalid update data.' });
     }
   }
-  
+
   async remove(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = req.params;
 

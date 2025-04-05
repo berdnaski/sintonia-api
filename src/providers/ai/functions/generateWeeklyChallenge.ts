@@ -23,8 +23,10 @@ const tools = {
     execute: async ({ coupleId }) => {
       const signalRepository = new PrismaSignalRepository();
       try {
-        const signals = await signalRepository.findByCoupleId(coupleId);
-        return JSON.stringify(signals);
+        const signals = await signalRepository.findByCoupleId(coupleId, {
+          perPage: 30
+        });
+        return JSON.stringify(signals.data);
       } catch (error) {
         console.error("Erro ao buscar sinais:", error);
         throw new Error("Erro ao buscar sinais do banco de dados");
@@ -43,9 +45,10 @@ const tools = {
     execute: async ({ coupleId }) => {
       const aiResponseRepository = new PrismaAIResponseRepository();
       try {
-        const limit = 3;
-        const responses = await aiResponseRepository.findByCoupleId(coupleId, limit);
-        return JSON.stringify(responses);
+        const responses = await aiResponseRepository.findByCoupleId(coupleId, {
+          perPage: 30
+        });
+        return JSON.stringify(responses.data);
       } catch (error) {
         throw new Error("Erro ao buscar respostas de IA do banco de dados");
       }
@@ -166,7 +169,6 @@ export async function GenerateWeeklyChallenge({ coupleId, userId }: WeeklyChalle
       maxTokens: 100
     });
 
-    console.log({ai: answer.text})
     if (!answer?.text) {
       return {
         response: {
