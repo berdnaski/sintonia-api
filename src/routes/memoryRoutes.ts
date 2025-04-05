@@ -3,6 +3,7 @@ import { MemoryController } from "../controllers/memory-controller";
 import { Auth } from "../middlewares/auth";
 import { CheckSubscription } from "../middlewares/checkSubscription";
 import { CreateMemory } from "../interfaces/memory.interface";  // Importe a interface CreateMemory
+import type { PaginationData } from "../@types/prisma";
 
 export async function memoryRoutes(app: FastifyInstance) {
   const memoryController = new MemoryController(app);
@@ -24,7 +25,7 @@ export async function memoryRoutes(app: FastifyInstance) {
     }
   );
 
-  app.get<{ Params: { coupleId: string } }>('/memories/:coupleId', async (req, reply) => {
+  app.get<{ Params: { coupleId: string }, Querystring: PaginationData }>('/memories/:coupleId', async (req, reply) => {
     await memoryController.findAllByCouple(req, reply);
   });
 

@@ -45,20 +45,27 @@ export class PrismaMemoryRepository implements IMemoryRepository {
     return query;
   }
 
-  async findAll(coupleId: string): Promise<Memory[]> { 
-    const query = await prisma.memory.findMany({
+  async findAll(coupleId: string, limit: number, page: number): Promise<Memory[]> {
+    const skip = (page - 1) * limit;
+  
+    const memories = await prisma.memory.findMany({
       where: {
-        coupleId: coupleId, 
+        coupleId,
       },
-      orderBy: { createdAt: 'desc' }, 
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      skip,
       include: {
         couple: true,
         createdByUser: true,
       },
     });
-
-    return query;
+  
+    return memories;
   }
+  
 
   async exists(ident: string): Promise<boolean> {
     const query = await prisma.memory.findFirst({

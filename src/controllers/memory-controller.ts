@@ -83,28 +83,37 @@ export class MemoryController {
     }
   }
 
-  async findAllByCouple(req: FastifyRequest<{ Params: { coupleId: string } }>, reply: FastifyReply) {
-    const { coupleId } = req.params;
-    
-    const memories = await this.memoryService.findAllByCouple(coupleId);
+ async findAllByCouple(
+  req: FastifyRequest<{ 
+    Params: { coupleId: string }, 
+    Querystring: { limit?: number; page?: number } 
+  }>, 
+  reply: FastifyReply
+) {
+  const { coupleId } = req.params;
+  const limit = Number(req.query.limit) || 8;
+  const page = Number(req.query.page) || 1;
 
-    if (memories.isLeft()) {
-      const error = memories.value;
-      return reply.status(400).send({ message: error.message });
-    }
+  const memories = await this.memoryService.findAllByCouple(coupleId, limit, page);
 
-    const memoriesWithUrls = await Promise.all(
-      memories.value.map(async (memory) => {
-        if (memory.avatarUrl) {
-          const signedUrl = await this.storageProvider.getUrl(memory.avatarUrl);
-          return { ...memory, avatarUrl: signedUrl };
-        }
-        return memory;
-      })
-    );
-
-    reply.status(200).send(memoriesWithUrls);
+  if (memories.isLeft()) {
+    const error = memories.value;
+    return reply.status(400).send({ message: error.message });
   }
+
+  const memoriesWithUrls = await Promise.all(
+    memories.value.map(async (memory) => {
+      if (memory.avatarUrl) {
+        const signedUrl = await this.storageProvider.getUrl(memory.avatarUrl);
+        return { ...memory, avatarUrl: signedUrl };
+      }
+      return memory;
+    })
+  );
+
+  reply.status(200).send(memoriesWithUrls);
+}
+
 
   async save(req: FastifyRequest<{ Params: { id: string }, Body: { title?: string, description?: string, avatar?: string } }>, reply: FastifyReply) {
     const { id } = req.params;

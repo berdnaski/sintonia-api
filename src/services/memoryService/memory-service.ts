@@ -49,14 +49,19 @@ export class MemoryService {
     return right(memory);
   }
 
-  async findAllByCouple(coupleId: string): Promise<getAllMemoryResponse> {
+  async findAllByCouple(
+    coupleId: string, 
+    limit: number = 8, 
+    page: number = 1
+  ): Promise<getAllMemoryResponse> {
     if (!coupleId) {
       return left(new RequiredParametersError('Couple ID is required.'));
     }
-
-    const memories = await this.memoryRepository.findAll(coupleId);
+  
+    const memories = await this.memoryRepository.findAll(coupleId, limit, page);
     return right(memories);
   }
+  
 
   async save(id: string, updatedData: { title?: string; description?: string; avatar?: string }): Promise<updateMemoryResponse> {
     const memory = await this.memoryRepository.findOne(id);
