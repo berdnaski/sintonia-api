@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: sintonia-api
+    runtime: node
+    repo: https://github.com/berdnaski/sintonia-api
+    branch: main
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sintonia-db
+          property: connectionString
+      - key: SECRET_KEY
+        sync: false
+    autoDeploy: true
+
+databases:
+  - name: sintonia-db
+    databaseName: sintonia
+    user: sintonia_user
