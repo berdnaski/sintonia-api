@@ -1,7 +1,7 @@
-import { AIResponse } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import { IAIResponseRepository, ICreateIAResponse } from "../interfaces/ai-response.interface";
 import { Paginate, PaginationParams } from "../@types/prisma";
+import type { AIResponse } from "@prisma/client";
 
 export class PrismaAIResponseRepository implements IAIResponseRepository {
   async create(data: ICreateIAResponse): Promise<AIResponse> {

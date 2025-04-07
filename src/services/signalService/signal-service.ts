@@ -1,4 +1,3 @@
-import type { AIResponse, Prisma, Signal } from "@prisma/client";
 import type { FastifyInstance } from "fastify";
 import { left, right, type Either } from "../../errors/either";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
@@ -11,6 +10,7 @@ import { CoupleMetricService } from "../coupleMetricService/couple-metric-servic
 import { CoupleMetricRecordService } from "../coupleMetricRecordService/couple-metric-record-service";
 import { CreateCoupleMetricRecord } from "../../interfaces/couple-metric-record.interface";
 import { Paginate, PaginationParams } from "../../@types/prisma";
+import type { AIResponse, Prisma, Signal } from "@prisma/client";
 
 type generateAnalysisResponse = Either<RequiredParametersError, AIResponse>
 type getAnalysisHistoryResponse = Either<RequiredParametersError, Paginate<AIResponse>>

@@ -1,4 +1,4 @@
-import { AIResponse, Prisma } from "@prisma/client";
+import type { AIResponse, Prisma } from "@prisma/client";
 import { Paginate, PaginationParams } from "../@types/prisma";
 
 export interface ICreateIAResponse {
