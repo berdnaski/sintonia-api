@@ -9,7 +9,7 @@ export class CheckoutController {
   }
 
   async createCheckout(
-    req: FastifyRequest<{ Params: { id: string }; Query: { email: string } }>,
+    req: FastifyRequest<{ Params: { id: string }; Query?: { email?: string } }>,
     reply: FastifyReply
   ) {
     const { id } = req.params;

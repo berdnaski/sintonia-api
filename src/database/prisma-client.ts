@@ -8,7 +8,7 @@ const prismaClientSingleton = () => {
       $allModels: {
         async paginate<T>(
           this,
-          args?: Prisma.QuestionFindManyArgs<InternalArgs> &{ page?: number; perPage?: number }
+          args?: (Prisma.MiddlewareParams['args'] & { page?: number; perPage?: number })
         ) {
           const context = Prisma.getExtensionContext(this)
           const { page = 1, perPage, ...rest } = args || {}
