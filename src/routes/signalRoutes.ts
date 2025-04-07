@@ -3,6 +3,7 @@ import { SignalController } from "../controllers/signal-controller";
 import { Auth } from "../middlewares/auth";
 import { CheckSubscription } from "../middlewares/checkSubscription";
 import { ICreateSignal } from "../interfaces/signal.interface";
+import { PaginationParams } from "../@types/prisma";
 
 export async function signalRoutes(app: FastifyInstance) {
   const signalController = new SignalController(app);
@@ -22,15 +23,15 @@ export async function signalRoutes(app: FastifyInstance) {
     await signalController.findOne(req, reply);
   });
 
-  app.get('/signals', async (req, reply) => {
-    await signalController.findAll(req, reply);
+  app.get<{ Params: { coupleId: string }, Querystring: PaginationParams }>('/signals/couple/:coupleId', async (req, reply) => {
+    await signalController.findAllByCoupleId(req, reply);
   });
 
   app.delete<{ Params: { id: string } }>('/signals/:id', async (req, reply) => {
     await signalController.remove(req, reply);
   });
 
-  app.get<{ Params: { coupleId: string }, Querystring: { limit?: number } }>('/ai-responses/:coupleId', async (req, reply) => {
+  app.get<{ Params: { coupleId: string }, Querystring: PaginationParams }>('/ai-responses/:coupleId', async (req, reply) => {
     await signalController.findAIResponsesByCoupleId(req, reply);
   });
 }

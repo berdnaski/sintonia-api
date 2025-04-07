@@ -3,6 +3,9 @@ import { QuestionController } from "../controllers/question-controller";
 import { IUpdateQuestion } from "../interfaces/question.interface";
 import { Auth } from "../middlewares/auth";
 import { CheckSubscription } from "../middlewares/checkSubscription";
+import { prisma } from "../database/prisma-client";
+import { Question } from "@prisma/client";
+import { PaginationParams } from "../@types/prisma";
 
 export async function questionsRoutes(app: FastifyInstance) {
   const questionController = new QuestionController(app);
@@ -18,7 +21,11 @@ export async function questionsRoutes(app: FastifyInstance) {
     await questionController.findOne(req, reply);
   });
 
-  app.get<{ Params: { userId: string } }>('/questions/all/:userId', async (req, reply) => {
+  app.get<{ Params: { userId: string }, Querystring: PaginationParams }>('/questions/all/:userId', async (req, reply) => {
     await questionController.findAll(req, reply);
+  });
+
+  app.post<{ Body: { userId: string, coupleId: string } }>('/questions', async (req, reply) => {
+    await questionController.generateQuestion(req, reply);
   });
 }

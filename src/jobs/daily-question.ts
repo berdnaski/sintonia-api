@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import cron from 'node-cron';
 import { sintoniaConfig } from '../config/api';
 import { ICoupleRepository } from "../interfaces/couple.interface";
-import { PrismaCoupleRepository } from "../repositories/couple-repository";
+import { CoupleWithUsers, PrismaCoupleRepository } from "../repositories/couple-repository";
 import { QuestionService } from "../services/questionService/question-service";
 
 export class JobDailyQuestion {
@@ -19,8 +19,11 @@ export class JobDailyQuestion {
       const couples = await this.coupleRepository.findAll();
 
       for (const couple of couples) {
-        const userId1 = couple.user1Id;
-        const userId2 = couple.user2Id;
+        if (!couple.users.length) {
+          continue
+        }
+        const userId1 = couple.users[0].id;
+        const userId2 = couple.users[1].id;
 
         await new QuestionService(this.fastify).generateQuestion(userId1, couple.id);
         await new QuestionService(this.fastify).generateQuestion(userId2, couple.id);

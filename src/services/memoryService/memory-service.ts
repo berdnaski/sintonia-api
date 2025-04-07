@@ -1,43 +1,34 @@
 import type { Memory } from "@prisma/client";
 import { RequiredParametersError } from "../../errors/required-parameters.error";
-import type { IMemoryRepository } from "../../interfaces/memory.interface";
+import type { CreateMemory, IMemoryRepository } from "../../interfaces/memory.interface";
 import { left, right, type Either } from "../../errors/either";
 import { PrismaMemoryRepository } from "../../repositories/memory-repository";
+import { Paginate, PaginationParams } from "../../@types/prisma";
 
 type createMemoryResponse = Either<RequiredParametersError, Memory>;
 type getMemoryByIdResponse = Either<RequiredParametersError, Memory>;
-type getAllMemoryResponse = Either<RequiredParametersError, Memory[]>;
+type getAllMemoryResponse = Either<RequiredParametersError, Paginate<Memory>>;
 type existsMemoryResponse = Either<RequiredParametersError, boolean>;
 type removeMemoryResponse = Either<RequiredParametersError, Memory>;
 type updateMemoryResponse = Either<RequiredParametersError, Memory>;
 
 export class MemoryService {
   private memoryRepository: IMemoryRepository;
-  
+
   constructor() {
     this.memoryRepository = new PrismaMemoryRepository();
   }
 
-  async create(title: string, description: string, coupleId: string, createdByUserId: string, avatar?: string): Promise<createMemoryResponse> {
-    if (!title || !description || !coupleId || !createdByUserId) {
+  async create(data: CreateMemory): Promise<createMemoryResponse> {
+    if (!data.title || !data.description || !data.coupleId || !data.createdByUserId) {
       return left(new RequiredParametersError('Missing required parameters.'));
     }
 
-    let avatarUrl = avatar;
-
-    
-
-    const memory = await this.memoryRepository.create({
-      title,
-      description,
-      coupleId,
-      createdByUserId,
-      avatar
-    });
+    const memory = await this.memoryRepository.create(data);
 
     return right(memory);
   }
-  
+
 
   async findOne(id: string): Promise<getMemoryByIdResponse> {
     const memory = await this.memoryRepository.findOne(id);
@@ -49,14 +40,19 @@ export class MemoryService {
     return right(memory);
   }
 
-  async findAllByCouple(coupleId: string): Promise<getAllMemoryResponse> {
+  async findAllByCouple(
+    coupleId: string,
+    params: PaginationParams
+  ): Promise<getAllMemoryResponse> {
     if (!coupleId) {
       return left(new RequiredParametersError('Couple ID is required.'));
     }
 
-    const memories = await this.memoryRepository.findAll(coupleId);
+    const memories = await this.memoryRepository.findAll(coupleId, params);
+
     return right(memories);
   }
+
 
   async save(id: string, updatedData: { title?: string; description?: string; avatar?: string }): Promise<updateMemoryResponse> {
     const memory = await this.memoryRepository.findOne(id);

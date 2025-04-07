@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, type FastifyReply } from "fastify";
 import { IUpdateQuestion } from "../interfaces/question.interface";
 import { QuestionService } from "../services/questionService/question-service";
+import { PaginationParams } from "../@types/prisma";
 
 export class QuestionController {
   private questionService: QuestionService;
@@ -34,9 +35,13 @@ export class QuestionController {
     }
   }
 
-  async findAll(req: FastifyRequest<{ Params: { userId: string } }>, reply: FastifyReply) {
+  async findAll(req: FastifyRequest<{ Params: { userId: string }, Querystring: PaginationParams }>, reply: FastifyReply) {
     const { userId } = req.params
-    const questionResult = await this.questionService.getAllQuestions(userId);
+    const { perPage, page } = req.query
+
+    const questionResult = await this.questionService.getAllQuestions(userId, {
+      perPage, page
+    });
 
     if (questionResult.isLeft()) {
       const error = questionResult.value;
@@ -57,5 +62,11 @@ export class QuestionController {
     } else {
       return reply.status(204).send();
     }
+  }
+
+  async generateQuestion(req: FastifyRequest<{ Body: { userId: string, coupleId: string } }>, reply: FastifyReply) {
+    const ai = await this.questionService.generateQuestion(req.body.userId, req.body.coupleId);
+
+    return reply.send(ai)
   }
 }

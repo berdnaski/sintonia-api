@@ -1,6 +1,7 @@
 import type { Signal } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import type { ICreateSignal, ISignalRepository, ISignalUpdate } from "../interfaces/signal.interface";
+import { Paginate, PaginationParams } from "../@types/prisma";
 
 export class PrismaSignalRepository implements ISignalRepository {
   async create(signal: ICreateSignal): Promise<Signal> {
@@ -48,10 +49,11 @@ export class PrismaSignalRepository implements ISignalRepository {
     return query as Signal;
   }
 
-  async findByCoupleId(coupleId: string): Promise<Signal[]> {
-    return prisma.signal.findMany({
+  async findByCoupleId(coupleId: string, params: PaginationParams): Promise<Paginate<Signal>> {
+    return prisma.signal.paginate({
       where: { coupleId },
       orderBy: { createdAt: "desc" },
+      ...params
     });
   }
 
@@ -60,16 +62,7 @@ export class PrismaSignalRepository implements ISignalRepository {
       orderBy: { createdAt: 'desc' }
     });
 
-    return query.map((signal) => {
-      return {
-        id: signal.id,
-        userId: signal.userId,
-        coupleId: signal.coupleId,
-        emotion: signal.emotion,
-        note: signal.note,
-        createdAt: signal.createdAt,
-      }
-    }) as unknown as Signal[];
+    return query;
   }
 
   async exists(ident: string): Promise<boolean> {

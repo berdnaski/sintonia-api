@@ -10,12 +10,13 @@ import { PrismaSignalRepository } from "../../repositories/signal-repository";
 import { CoupleMetricService } from "../coupleMetricService/couple-metric-service";
 import { CoupleMetricRecordService } from "../coupleMetricRecordService/couple-metric-record-service";
 import { CreateCoupleMetricRecord } from "../../interfaces/couple-metric-record.interface";
+import { Paginate, PaginationParams } from "../../@types/prisma";
 
 type generateAnalysisResponse = Either<RequiredParametersError, AIResponse>
-type getAnalysisHistoryResponse = Either<RequiredParametersError, AIResponse[]>
+type getAnalysisHistoryResponse = Either<RequiredParametersError, Paginate<AIResponse>>
 type saveSignalResponse = Either<RequiredParametersError, Signal>;
 type getSignalByIdResponse = Either<RequiredParametersError, Signal>;
-type getAllSignalResponse = Either<RequiredParametersError, Signal[]>;
+type getAllSignalResponse = Either<RequiredParametersError, Paginate<Signal>>;
 type existsSignalResponse = Either<RequiredParametersError, boolean>;
 type removeSignalResponse = Either<RequiredParametersError, Signal>;
 
@@ -44,8 +45,7 @@ export class SignalService {
       this.IAIResponseRepository.create({
         ...answer.response,
         signalId: signal.id,
-        metrics: answer.response.metrics as Prisma.JsonArray,
-        challenge: answer.response.challenge || undefined,
+        metrics: answer.response.metrics as Prisma.JsonArray
       }),
       this.metricService.findByCoupleId(coupleId),
     ]);
@@ -67,15 +67,10 @@ export class SignalService {
   }
 
 
-  async getAnalysisHistory(coupleId: string, limit: number = 3): Promise<getAnalysisHistoryResponse> {
-    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId, limit);
+  async getAnalysisHistory(coupleId: string, params: PaginationParams): Promise<getAnalysisHistoryResponse> {
+    const answer = await this.IAIResponseRepository.findByCoupleId(coupleId, params);
 
     return right(answer);
-  }
-
-  async getAllAIResponses(): Promise<getAnalysisHistoryResponse> {
-    const aiResponses = await this.IAIResponseRepository.findAll();
-    return right(aiResponses);
   }
 
   async save(id: string, updateData: ISignalUpdate): Promise<saveSignalResponse> {
@@ -96,8 +91,8 @@ export class SignalService {
     return right(result);
   }
 
-  async findAll(): Promise<getAllSignalResponse> {
-    const signals = await this.signalRepository.findAll();
+  async findAllByCoupleId(coupleId: string, params: PaginationParams): Promise<getAllSignalResponse> {
+    const signals = await this.signalRepository.findByCoupleId(coupleId, params);
 
     return right(signals);
   }

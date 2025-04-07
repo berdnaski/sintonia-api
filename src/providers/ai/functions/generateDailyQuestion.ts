@@ -22,8 +22,10 @@ const tools = {
     execute: async ({ coupleId }) => {
       const signalRepository = new PrismaSignalRepository();
       try {
-        const signals = await signalRepository.findByCoupleId(coupleId);
-        return JSON.stringify(signals);
+        const signals = await signalRepository.findByCoupleId(coupleId, {
+          perPage: 30
+        });
+        return JSON.stringify(signals.data);
       } catch (error) {
         console.error("Erro ao buscar sinais:", error);
         throw new Error("Erro ao buscar sinais do banco de dados");
@@ -42,9 +44,10 @@ const tools = {
     execute: async ({ coupleId }) => {
       const aiResponseRepository = new PrismaAIResponseRepository();
       try {
-        const limit = 3;
-        const responses = await aiResponseRepository.findByCoupleId(coupleId, limit);
-        return JSON.stringify(responses);
+        const responses = await aiResponseRepository.findByCoupleId(coupleId, {
+          perPage: 30
+        });
+        return JSON.stringify(responses.data);
       } catch (error) {
         throw new Error("Erro ao buscar respostas de IA do banco de dados");
       }
@@ -102,35 +105,40 @@ export async function GenerateDailyQuestion({ coupleId, userId }: DailyQuestionP
     const answer = await generateText({
       model: deepseek,
       prompt: `
-Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar uma única pergunta reflexiva para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
+        Você é um assistente de IA especializado em relacionamentos. Sua missão é gerar uma única pergunta reflexiva para o casal, com base nos dados fornecidos, para estimular o diálogo e a autoavaliação.
 
-Dados:
-Histórico de interações: ${JSON.stringify(interactionHistory)}
-Sinais recentes: ${JSON.stringify(signals)}
-Perguntas e respostas anteriores: ${JSON.stringify(questions)}
+        Dados:
+        Histórico de interações: ${JSON.stringify(interactionHistory)}
+        Sinais recentes: ${JSON.stringify(signals)}
+        Perguntas e respostas anteriores: ${JSON.stringify(questions)}
 
-Instruções:
-- Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
-- Gere APENAS uma pergunta reflexiva que não tenha sido feita anteriormente.
-- A pergunta deve ser relevante para o contexto do relacionamento do casal.
-- Não repita perguntas que já foram feitas anteriormente.
-- Responda em formato JSON com um único campo "question" contendo a pergunta.
-- A pergunta deve ter no máximo 100 caracteres.
-- NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
-`,
+        Instruções:
+        - Fale diretamente com o casal usando sempre a segunda pessoa (você, seu, sua).
+        - Gere APENAS uma pergunta reflexiva que não tenha sido feita anteriormente.
+        - A pergunta deve ser relevante para o contexto do relacionamento do casal.
+        - Não repita perguntas que já foram feitas anteriormente.
+        - Responda em formato JSON com um único campo "question" contendo a pergunta.
+        - A pergunta deve ter no máximo 100 caracteres.
+        - NÃO inclua quebras de linha, caracteres especiais ou informações extras fora do JSON.
+
+        Formato exato da resposta:
+        {
+          "question": "[question]"
+        }
+      `,
       system: `
-Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar perguntas reflexivas únicas e relevantes para o casal, com base nos dados fornecidos.
-REGRAS IMPORTANTES:
-- Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
-- Gere apenas uma pergunta por vez.
-- Gere uma pergunta diferente para cada usuário.
-- Não repita perguntas que já foram feitas anteriormente.
-- A pergunta deve ser direta e promover a reflexão sobre o relacionamento.
-- Responda sempre em formato JSON com o campo "question".
-- Mantenha a pergunta curta e objetiva.
-- NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
-- SEMPRE feche todas as aspas e chaves corretamente.
-`,
+        Você é um assistente de IA especializado em análise de relacionamentos. Seu objetivo é gerar perguntas reflexivas únicas e relevantes para o casal, com base nos dados fornecidos.
+        REGRAS IMPORTANTES:
+        - Use sempre a segunda pessoa (você, seu, sua) e evite narrativas em terceira pessoa.
+        - Gere apenas uma pergunta por vez.
+        - Gere uma pergunta diferente para cada usuário.
+        - Não repita perguntas que já foram feitas anteriormente.
+        - A pergunta deve ser direta e promover a reflexão sobre o relacionamento.
+        - Responda sempre em formato JSON com o campo "question".
+        - Mantenha a pergunta curta e objetiva.
+        - NÃO use quebras de linha, caracteres especiais ou textos fora do JSON.
+        - SEMPRE feche todas as aspas e chaves corretamente.
+        `,
       maxTokens: 100
     });
 

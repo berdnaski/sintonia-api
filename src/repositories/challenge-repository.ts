@@ -48,6 +48,7 @@ export class PrismaChallengeRepository implements IChallengeRepository {
 
   async findAll(userId: string): Promise<Challenge[]> {
     const query = await prisma.challenge.findMany({
+      take: 4,
       where: {
         userId: userId
       },

@@ -3,6 +3,9 @@ import { MemoryService } from "../services/memoryService/memory-service";
 import { CreateMemory } from "../interfaces/memory.interface";
 import type { StorageProvider } from "../providers/storage/storage-provider";
 import { R2StorageProvider } from "../providers/storage/implementations/r2-storage-provider";
+import { PaginationParams } from "../@types/prisma";
+import { title } from "process";
+import { Multipart } from "@fastify/multipart";
 
 export class MemoryController {
   private memoryService: MemoryService;
@@ -15,54 +18,50 @@ export class MemoryController {
 
   async create(req: FastifyRequest, reply: FastifyReply) {
     try {
-      const fields = await req.parts();
-      const formData: Record<string, any> = {};
-      let file;
-  
-      for await (const part of fields) {
-        if (part.type === 'file') {
-          file = part;
-        } else {
-          formData[part.fieldname] = part.value;
+      const parts = await req.file();
+
+      const fields = {} as CreateMemory
+
+      Object.values(parts.fields).forEach((field: Multipart) => {
+        if (field.type === 'field') {
+          fields[field.fieldname] = field.value
         }
-      }
-  
-      const { title, description, coupleId, createdByUserId } = formData;
-  
+      })
+
       let avatarUrl = null;
-      if (file) {
+
+      if (parts.file) {
         try {
-          const buffer = await file.toBuffer();
+          const buffer = await parts.toBuffer();
           const { key } = await this.storageProvider.upload({
-            fileName: file.filename,
-            fileType: file.mimetype,
+            fileName: parts.filename,
+            fileType: parts.mimetype,
             buffer,
           });
+
           avatarUrl = key;
         } catch (error) {
           return reply.status(400).send({ message: "Failed to upload memory image" });
         }
       }
-  
-      const result = await this.memoryService.create(
-        title,
-        description,
-        coupleId,
-        createdByUserId,
-        avatarUrl
-      );
-  
+
+      const result = await this.memoryService.create({
+        ...fields,
+        avatar: avatarUrl
+      });
+
       if (result.isLeft()) {
         const error = result.value;
         return reply.status(400).send({ message: error.message });
       }
-  
+
       let memoryWithUrl = result.value;
+
       if (memoryWithUrl.avatarUrl) {
         const signedUrl = await this.storageProvider.getUrl(memoryWithUrl.avatarUrl);
         memoryWithUrl = { ...memoryWithUrl, avatarUrl: signedUrl };
       }
-  
+
       reply.status(201).send(memoryWithUrl);
     } catch (error) {
       console.error('Error creating memory:', error);
@@ -83,36 +82,49 @@ export class MemoryController {
     }
   }
 
-  async findAllByCouple(req: FastifyRequest<{ Params: { coupleId: string } }>, reply: FastifyReply) {
-    const { coupleId } = req.params;
-    
-    const memories = await this.memoryService.findAllByCouple(coupleId);
+ async findAllByCouple(
+  req: FastifyRequest<{
+    Params: { coupleId: string },
+    Querystring: PaginationParams
+  }>,
+  reply: FastifyReply
+) {
+  const { coupleId } = req.params;
 
-    if (memories.isLeft()) {
-      const error = memories.value;
-      return reply.status(400).send({ message: error.message });
-    }
+  const memories = await this.memoryService.findAllByCouple(coupleId, {
+    perPage: req.query.perPage,
+    page: req.query.page
+  });
 
-    const memoriesWithUrls = await Promise.all(
-      memories.value.map(async (memory) => {
-        if (memory.avatarUrl) {
-          const signedUrl = await this.storageProvider.getUrl(memory.avatarUrl);
-          return { ...memory, avatarUrl: signedUrl };
-        }
-        return memory;
-      })
-    );
-
-    reply.status(200).send(memoriesWithUrls);
+  if (memories.isLeft()) {
+    const error = memories.value;
+    return reply.status(400).send({ message: error.message });
   }
+
+  const memoriesWithUrls = await Promise.all(
+    memories.value.data.map(async (memory) => {
+      if (memory.avatarUrl) {
+        const signedUrl = await this.storageProvider.getUrl(memory.avatarUrl);
+        return { ...memory, avatarUrl: signedUrl };
+      }
+      return memory;
+    })
+  );
+
+  reply.status(200).send({
+    data: memoriesWithUrls,
+    meta: memories.value.meta
+  });
+}
+
 
   async save(req: FastifyRequest<{ Params: { id: string }, Body: { title?: string, description?: string, avatar?: string } }>, reply: FastifyReply) {
     const { id } = req.params;
     const updatedData = req.body;
-  
+
     if (updatedData && (updatedData.title || updatedData.description || updatedData.avatar)) {
       const updateResult = await this.memoryService.save(id, updatedData);
-  
+
       if (updateResult.isLeft()) {
         const error = updateResult.value;
         return reply.status(400).send({ message: error.message });
@@ -123,7 +135,7 @@ export class MemoryController {
       return reply.status(400).send({ message: 'Invalid update data.' });
     }
   }
-  
+
   async remove(req: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const { id } = req.params;
 

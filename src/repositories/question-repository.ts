@@ -1,6 +1,7 @@
 import { Question } from "@prisma/client";
 import { prisma } from "../database/prisma-client";
 import { ICreateQuestion, IQuestionsRepository, IUpdateQuestion } from "../interfaces/question.interface";
+import { Paginate, PaginationParams } from "../@types/prisma";
 
 export class PrismaQuestionRepository implements IQuestionsRepository {
   async create(question: ICreateQuestion): Promise<Question> {
@@ -46,12 +47,15 @@ export class PrismaQuestionRepository implements IQuestionsRepository {
     return query
   }
 
-  async findAll(userId: string): Promise<Question[]> {
-    const query = await prisma.question.findMany({
+  async findAll(userId: string, params: PaginationParams): Promise<Paginate<Question>> {
+    const query = await prisma.question.paginate<Question>({
       where: {
         userId: userId
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: {
+        createdAt: 'desc'
+      },
+      ...params
     })
 
     return query
