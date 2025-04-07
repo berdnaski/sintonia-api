@@ -4,10 +4,13 @@
   "description": "",
   "main": "index.js",
   "type": "module",
+  "engines": {
+    "node": "14.x"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",                
-    "vercel-build": "npx prisma generate && npx prisma migrate deploy && tsc" 
+    "start": "npx prisma generate && npx prisma migrate deploy && tsc && node dist/server.js"
   },
   "keywords": [],
   "author": "",
