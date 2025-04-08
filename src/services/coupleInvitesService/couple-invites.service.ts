@@ -63,6 +63,12 @@ class CoupleInviteService {
     const result = await this.coupleInviteRepository.save(coupleInvite);
     return right(result);
   }
+
+  async findInviteByInviterId(userId: string): Promise<getCoupleInviteByIdResponse> {
+    const result = await this.coupleInviteRepository.findInviteByInviterId(userId);
+
+    return right(result);
+  }
 }
 
 export { CoupleInviteService };
