@@ -7,4 +7,8 @@ export async function coupleInviteRoutes(app: FastifyInstance) {
   app.get<{ Params: { token: string } }>('/couples/invite/token/:token', async (req, reply) => {
     await coupleInviteController.findByToken(req, reply);
   })
+
+  app.get<{ Params: { userId: string } }>('/couples/invite/by-inviter/:userId', async (req, reply) => {
+    await coupleInviteController.findInviteByInviterId(req, reply);
+  })
 }
