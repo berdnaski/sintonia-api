@@ -29,6 +29,11 @@ app.register(fastifyJwt, {
   },
 });
 
+app.register(fastifyRawBody, {
+  field: 'rawBody',
+  encoding: 'utf-8',
+});
+
 app.setErrorHandler(errorHandler);
 app.register(fastifyCors);
 app.register(fastifyFormbody);
@@ -37,11 +42,8 @@ app.register(fastifyMultipart, {
     fileSize: 10 * 1024 * 1024, // 10MB
   },
 });
-app.register(fastifyRawBody, {
-  field: 'rawBody',
-  encoding: 'utf-8',
-});
 
+app.register(webhookRoutes, { prefix: 'data' });
 app.register(authRoutes, { prefix: 'auth' });
 app.register(userRoutes);
 app.register(checkoutRoutes);
@@ -50,7 +52,6 @@ app.register(coupleRoutes);
 app.register(signalRoutes);
 app.register(uploadRoutes);
 app.register(memoryRoutes);
-app.register(webhookRoutes, { prefix: 'data' });
 app.register(questionsRoutes)
 app.register(challengeRoutes)
 
