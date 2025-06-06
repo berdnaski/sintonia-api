@@ -1,4 +1,4 @@
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
 import { r2 } from "../../../lib/cloudflare";
@@ -43,6 +43,20 @@ export class R2StorageProvider implements StorageProvider {
     } catch (error) {
       console.error('Error generating signed URL:', error);
       throw new Error('Failed to generate file URL');
+    }
+  }
+
+  async delete(key: string): Promise<void> {
+    try {
+      const command = new DeleteObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+      });
+
+      await r2.send(command);
+    } catch (error) {
+      console.error('Error deleting object from R2:', error);
+      throw error;
     }
   }
 }

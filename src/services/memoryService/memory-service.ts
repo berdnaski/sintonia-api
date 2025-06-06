@@ -4,6 +4,8 @@ import type { CreateMemory, IMemoryRepository } from "../../interfaces/memory.in
 import { left, right, type Either } from "../../errors/either";
 import { PrismaMemoryRepository } from "../../repositories/memory-repository";
 import { Paginate, PaginationParams } from "../../@types/prisma";
+import { R2StorageProvider } from "../../providers/storage/implementations/r2-storage-provider";
+import type { StorageProvider } from "../../providers/storage/storage-provider";
 
 type createMemoryResponse = Either<RequiredParametersError, Memory>;
 type getMemoryByIdResponse = Either<RequiredParametersError, Memory>;
@@ -14,9 +16,11 @@ type updateMemoryResponse = Either<RequiredParametersError, Memory>;
 
 export class MemoryService {
   private memoryRepository: IMemoryRepository;
+  private storageProvider: StorageProvider;
 
   constructor() {
     this.memoryRepository = new PrismaMemoryRepository();
+    this.storageProvider = new R2StorageProvider();
   }
 
   async create(data: CreateMemory): Promise<createMemoryResponse> {
@@ -77,6 +81,14 @@ export class MemoryService {
 
     if (!memory) {
       return left(new RequiredParametersError('Memory not found.'));
+    }
+
+    if (memory.avatarUrl) {
+      try {
+        await this.storageProvider.delete(memory.avatarUrl);
+      } catch (error) {
+        console.error('Error deleting memory image:', error);
+      }
     }
 
     const deletedMemory = await this.memoryRepository.remove(id);

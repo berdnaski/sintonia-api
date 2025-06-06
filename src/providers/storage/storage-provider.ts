@@ -6,4 +6,6 @@ export interface StorageProvider {
   }): Promise<{ url: string; key: string }>;
   
   getUrl(key: string): Promise<string>;
+  
+  delete(key: string): Promise<void>;
 }
