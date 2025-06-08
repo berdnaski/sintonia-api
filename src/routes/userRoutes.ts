@@ -21,21 +21,20 @@ export async function userRoutes(app: FastifyInstance) {
       await userController.update(req, reply);
     });
 
-    app.get<{ Params: { email: string } }>("/users/recovery/send/:email", async (req, reply) => {
-      await userController.sendRecoveryEmail(req, reply)
-    })
-
-    app.post<{ Params: { tokenId: string }, Body: { password: string } }>("/users/recovery/reset/:tokenId", async (req, reply) => {
-      await userController.RecoveryUser(req, reply)
-    })
-
     app.post("/users/me", async (req, reply) => {
       await userController.me(req, reply);
     });
   })
 
-
   app.get<{ Params: { id: string } }>('/users/:id', async (req, reply) => {
     await userController.findOne(req, reply);
   });
+
+  app.post<{ Params: { email: string } }>("/send-reset-password/:email", async (req, reply) => {
+    await userController.sendResetPassword(req, reply)
+  })
+
+  app.post<{ Params: { tokenId: string }, Body: { password: string } }>("/reset-password/:tokenId", async (req, reply) => {
+    await userController.resetPassword(req, reply)
+  })
 }

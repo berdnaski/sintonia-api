@@ -9,91 +9,88 @@ import { UserService } from "../services/userService/user.service";
 import { hashPassword } from "../utils/hash";
 import { R2StorageProvider } from "../providers/storage/implementations/r2-storage-provider";
 import { StorageProvider } from "../providers/storage/storage-provider";
-import { r2 } from "../lib/cloudflare";
-
 export class UserController {
+   private fastify: FastifyInstance;
   private userService: UserService;
   private tokenService: TokensService;
   private mailProvider: MailProvider;
   private storageProvider: StorageProvider;
 
   constructor(app: FastifyInstance) {
+    this.fastify = app;
     this.userService = new UserService(app);
     this.tokenService = new TokensService();
     this.mailProvider = new MailProvider();
     this.storageProvider = new R2StorageProvider();
   }
 
-  async sendRecoveryEmail(req: FastifyRequest<{ Params: { email: string } }>, reply: FastifyReply) {
+  async sendResetPassword(req: FastifyRequest<{ Params: { email: string } }>, reply: FastifyReply) {
     const { email } = req.params;
 
     const userResult = await this.userService.findOne(email);
+
     if (userResult.isLeft()) {
-      return reply.status(400).send({ message: "This email does not exist." });
+      return reply.status(400).send({ message: "This user does not exist." });
     }
-    const account = userResult.value;
+
+    const user = userResult.value;
 
     const tokenResult = await this.tokenService.createToken({
       id: v4(),
       type: "recovery",
       used: false,
-      user_id: account.id,
+      user_id: user.id,
       expiresIn: dayjs().add(1, "hour").unix(),
     });
+
     if (tokenResult.isLeft()) {
       return reply.status(400).send({ message: "Failed to create recovery token." });
     }
-    const token = tokenResult.value;
 
-    await this.tokenService.saveToken(token);
+    const token = tokenResult.value;
 
     await this.mailProvider.sendMail({
       to: {
-        name: account.name,
-        email: account.email,
+        name: user.name,
+        email: user.email,
       },
       from: {
         name: `${process.env.MAILER_DISPLAY_NAME}`,
         email: `${process.env.MAILER_USERNAME}`,
       },
       subject: "Recuperação de Senha",
-      body: RecoveryMailTemplate(account.name, token.id),
+      body: RecoveryMailTemplate(user.name, token.id),
     });
 
     return reply.status(200).send();
   }
 
-  async RecoveryUser(
+  async resetPassword(
     req: FastifyRequest<{ Body: { password: string }; Params: { tokenId: string } }>,
     reply: FastifyReply
   ) {
     const { password } = req.body;
     const { tokenId } = req.params;
 
-    const tokenResult = await this.tokenService.getTokenById(tokenId);
-    if (tokenResult.isLeft() || !tokenResult.value) {
+    const inviteTokenResult = await this.tokenService.getTokenById(tokenId);
+
+    if (inviteTokenResult.isLeft() || !inviteTokenResult.value || inviteTokenResult.value.type !== "recovery") {
+      return reply.status(400).send({ message: "Invalid token.", code: 'INVALID_TOKEN' });
+    }
+
+    const inviteToken = inviteTokenResult.value
+    const isExpired = dayjs().isAfter(dayjs.unix(inviteToken.expiresIn));
+
+    if (inviteToken.used || isExpired) {
+      return reply.status(400).send({ message: "Recovery link has expired. Please request a new password recovery.", code: 'TOKEN_EXPIRED' });
+    }
+
+    const userResult = await this.userService.findOne(inviteToken.user_id);
+
+    if (userResult.isLeft()) {
       return reply.status(400).send({ message: "Invalid token." });
     }
-    const token = tokenResult.value;
-
-    if (token.type !== "recovery") {
-      return reply.status(400).send({ message: "Invalid token." });
-    }
-
-    if (token.used) {
-      return reply.status(400).send({ message: "This recovery link has already been used. Please request a new password recovery." });
-    }
-
-    const isExpired = dayjs().isAfter(dayjs.unix(token.expiresIn));
-    if (isExpired) {
-      return reply.status(400).send({ message: "Recovery link has expired. Please request a new password recovery." });
-    }
-
-    const accountResult = await this.userService.findOne(token.user_id);
-    if (accountResult.isLeft()) {
-      return reply.status(400).send({ message: "Invalid token." });
-    }
-    const account = accountResult.value;
+    const user = userResult.value;
 
     if (!password || password.trim().length < 6) {
       return reply.status(400).send({ message: "Password is required and must be at least 6 characters." });
@@ -101,16 +98,27 @@ export class UserController {
 
     const hashedPassword = await hashPassword(password);
 
-    token.used = true;
-    await this.tokenService.saveToken(token);
+    inviteToken.used = true;
+
+    await this.tokenService.saveToken(inviteToken);
 
     const updateData: UserUpdate = { password: hashedPassword };
-    const updateResult = await this.userService.save(account.id, updateData);
+
+    const updateResult = await this.userService.save(user.id, updateData);
+
     if (updateResult.isLeft()) {
       return reply.status(400).send({ message: "Failed to update password." });
     }
 
-    return reply.status(200).send({ message: "Password updated successfully." });
+    const jwtToken = this.fastify.jwt.sign({
+      id: user?.id,
+      email: user?.email,
+    });
+
+    return reply.status(200).send({ 
+      user,
+      token: jwtToken
+     });
   }
 
   async findAll(req: FastifyRequest, reply: FastifyReply) {
