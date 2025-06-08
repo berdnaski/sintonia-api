@@ -26,7 +26,7 @@ export const RecoveryMailTemplate = (name: string, token: string) => {
                   <h2 style="color: #333333; font-size: 20px; margin: 0 0 20px;">Olá ${name},</h2>
                   <p style="color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px;">Recebemos uma solicitação para redefinir a senha da sua conta no ${sintoniaConfig.product}. Se você não solicitou a redefinição da senha, ignore este e-mail.</p>
                   <p style="color: #666666; font-size: 16px; line-height: 1.5; margin: 0 0 20px;">Caso tenha sido você, clique no botão abaixo para redefinir sua senha:</p>
-                  <a href="${sintoniaConfig.frontend}/users/password-reset/${token}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 16px; font-weight: bold;">Redefinir Senha</a>
+                  <a href="${sintoniaConfig.frontend}/auth/reset-password/${token}" style="display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 16px; font-weight: bold;">Redefinir Senha</a>
                   <p style="color: #666666; font-size: 14px; margin: 20px 0 0;">O link acima expira em 1 hora.</p>
                 </td>
               </tr>
