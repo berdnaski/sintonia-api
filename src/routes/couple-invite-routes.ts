@@ -11,4 +11,8 @@ export async function coupleInviteRoutes(app: FastifyInstance) {
   app.get<{ Params: { userId: string } }>('/couples/invite/by-inviter/:userId', async (req, reply) => {
     await coupleInviteController.findInviteByInviterId(req, reply);
   })
+
+  app.delete<{ Params: { userId: string } }>('/couples/invite/by-inviter/:userId', async (req, reply) => {
+    await coupleInviteController.deleteByInviterId(req, reply);
+  })
 }
