@@ -2,31 +2,30 @@ name: Node.js CI
 
 on:
   pull_request:
-    branches:
-      - '**'
+    branches: ['**']
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Use Node.js 18+
+      - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '>=18'
 
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: ${{ runner.os }}-node-
+
       - name: Install dependencies
         run: npm install
 
-      - name: Run Lint
-        run: |
-          npm install --save-dev eslint
-          npm run lint
-
-      - name: Run Tests
-        run: |
-          npm install --save-dev jest
-          npm run test
+      - name: Lint commits
+        uses: wagoid/commitlint-github-action@v5
