@@ -82,6 +82,7 @@ model Couple {
   users              User[]
 
   @@map("couples")
+  DailySummary DailySummary[]
 }
 
 model CoupleMetric {
@@ -209,4 +210,18 @@ model Memory {
   createdByUser   User     @relation(fields: [createdByUserId], references: [id])
 
   @@map("memories")
+}
+
+model DailySummary {
+  id String @id @default(uuid())
+  coupleId String
+  date DateTime
+  summary String
+  insights   String?
+  createdAt DateTime @default(now())
+  
+  couple     Couple   @relation(fields: [coupleId], references: [id])
+
+  @@unique([coupleId, date])
+  @@map("daily_summaries")
 }

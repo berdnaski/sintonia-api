@@ -19,6 +19,8 @@ import { userRoutes } from './routes/userRoutes';
 import { webhookRoutes } from './routes/webhookRoutes';
 import { uploadRoutes } from './routes/uploadRoutes';
 import { memoryRoutes } from './routes/memoryRoutes';
+import { JobDailySummary } from './jobs/daily-summary';
+import { summaryRoutes } from './routes/summary-routes';
 
 const app: FastifyInstance = fastify();
 
@@ -53,12 +55,15 @@ app.register(signalRoutes);
 app.register(uploadRoutes);
 app.register(memoryRoutes);
 app.register(questionsRoutes)
-app.register(challengeRoutes)
+app.register(challengeRoutes);
+app.register(summaryRoutes);
 
 const dailyQuestionJob = new JobDailyQuestion(app);
+const dailySummaryJob = new JobDailySummary(app);
 const jobWeeklyChallenge = new JobWeeklyChallenge(app);
 dailyQuestionJob.start();
 jobWeeklyChallenge.start();
+dailySummaryJob.start();
 
 const PORT = Number(process.env.PORT) || 3000;
 
