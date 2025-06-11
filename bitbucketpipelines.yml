@@ -1,7 +1,0 @@
-image:
-  name: node:18.4.0
-
-definitions:
-  steps:
-    - step:
-        name:
